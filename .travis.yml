@@ -1,9 +1,19 @@
 language: node_js
 
+# generate with `travis encrypt GITHUB_TOKEN=a376226383f404b6879d5ae1f867d895d3cc6689 --add`
+# To get this to work, I had to `sudo apt install ruby ruby-dev libz-dev` *then* `gem install travis`
+# Tried all kinds of combinations for this, using --org and -r flags, putting the secure: under the github_token,
+# capitalizing things, gh-token instead. I even tried using the unencrypted key directly, but if you do that github
+# seems to detect it on push and immediately purges the key so it doesn't exist when Travis tries to use it.
+# I have no idea why it's necessary to do this. I've seen it work otherwise before. Maybe it's the VARIABLE=? thing?
+# I'll keep playing with it.
+env:
+  global:
+    secure: VoiEzG8ZPjSiINrZDokb98JQcCpaY11URIdx49XPLKVbH2ik1yR+59kwBTmhpwLC6biBJqFrFO5DjFzsYdtF8r+qQyVvr3b0cQ3v9QNYkMnKg2TJOQjf476wOo7RkIxz6PEwFjJxRdI02mO/IiTrEKg03qAJuRjhy5/DF0xlhbKbq8VvqImG1emfg7k8/3YTqN6g/QUmgO43AsVOB7OzseY5w1D8+9aEiJcdvmBm6zal+oO57ZjQNRE1xgPhO7NG9M3mfEtgvWQw/VxSTOkTmrnuM2/+zzEwp0nkb7RUpCMZ2WNQxMVt3+9ueUSuJui/CA/hO4obxw9n2KXS/rVxT0O+KK2LBC5/71tVDlwLQdo4fHTAmRI4cqi9usvi2arkgacoy/Qow3wi7UQZAlRvFqSsCY3MuotdPhzHCosthttBwkx2byxIonuO1Ijjv49qugQG9adh+U+j7/Y4ebk8ZpQW1Z2bwy+bLe5ouoyY3HIGbL/Eyug9XAosO4YFBj883jBI5wv/fWPu6TZTLkHE8PoiW5y18elXqJ30+oSISBhncN0v7vqH220DjIZ+dDG5mJ8w5nd/8On8XPpWsXbBW72zJj/yzNUWNwwUzW1i0h9wwaJoB17N0tjfL7BX0xTPWfjqhbQx0QVrD9uUIIyarjg8AYJpi8shvv2Lrt36qq0=
+
 deploy:
   provider: pages
-  github_token:
-    secure: VoiEzG8ZPjSiINrZDokb98JQcCpaY11URIdx49XPLKVbH2ik1yR+59kwBTmhpwLC6biBJqFrFO5DjFzsYdtF8r+qQyVvr3b0cQ3v9QNYkMnKg2TJOQjf476wOo7RkIxz6PEwFjJxRdI02mO/IiTrEKg03qAJuRjhy5/DF0xlhbKbq8VvqImG1emfg7k8/3YTqN6g/QUmgO43AsVOB7OzseY5w1D8+9aEiJcdvmBm6zal+oO57ZjQNRE1xgPhO7NG9M3mfEtgvWQw/VxSTOkTmrnuM2/+zzEwp0nkb7RUpCMZ2WNQxMVt3+9ueUSuJui/CA/hO4obxw9n2KXS/rVxT0O+KK2LBC5/71tVDlwLQdo4fHTAmRI4cqi9usvi2arkgacoy/Qow3wi7UQZAlRvFqSsCY3MuotdPhzHCosthttBwkx2byxIonuO1Ijjv49qugQG9adh+U+j7/Y4ebk8ZpQW1Z2bwy+bLe5ouoyY3HIGbL/Eyug9XAosO4YFBj883jBI5wv/fWPu6TZTLkHE8PoiW5y18elXqJ30+oSISBhncN0v7vqH220DjIZ+dDG5mJ8w5nd/8On8XPpWsXbBW72zJj/yzNUWNwwUzW1i0h9wwaJoB17N0tjfL7BX0xTPWfjqhbQx0QVrD9uUIIyarjg8AYJpi8shvv2Lrt36qq0=
+  github_token: $GITHUB_TOKEN
   skip_cleanup: true
   on:
     branch: master
