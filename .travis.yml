@@ -16,8 +16,8 @@ script:
 
 deploy:
   - provider: pages
-	skip_cleanup: true
-	github_token:
+    skip_cleanup: true
+    github_token:
       secure: sCdH3vtCZG30vLtmYYT0uvY1OZejv42t3ctTKbRi5NxixrNWK6qAuOsF7p2Q9oHu7O9EUSDHoVtcGCDtRd6CScFQ+bIK7HjVL13SvxSNMObs+MkjmfwtWQw7MONsrb/yQlf+/GwNQ5WDSU7iwM8ZURlmtKLyDGr9pZvBGrf/jCL7HN5+0czyPyGlUF3otGPh6djDWYlNfQFETEmdQESomdxXyOlhm5y6++ykBpmTuGQfag77V4c/HM+IbcppS8K3g0GTGVlFsvrdYG2gQAh4vwKc8aDsGdhjRMgVhhfNVvI7ZJNEbM2Wehn1unUYPJSYoP9jKNgnS+vBcuN/IEzR73zC2TcBW0QFe80+HZjEXdXRWxDJWy6UHa6B0aFYRl+WrDqxgk5oDmpBgUDMevy9/tnive3Ngijb0K8hWT4BKMkVZdhWs0DaEFev9x1SAk5Y3S64B6IfKQ0NB+skTmb+zWUAVeBO29FAXm08wFgseWGc+R0VbPk5yGJp00doXtcbC38QuYZphqJ6LFNvee0muCuXlW3YJKwXJAV7rS/GU0j0Ox2vXbd1+bZjUQigSQg2Li15nxrTZobXQiL6PKoxQIul8MM7G553TcScWQzIG50p+N5PBwcnHV13Lr7IGp0i4w/3b6eXcp9OwQ0U6jXiVnkRPz0cH5Q6F6yyjuENcqQ=
 # local_dir: out
     on:
