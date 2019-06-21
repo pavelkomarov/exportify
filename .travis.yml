@@ -2,6 +2,6 @@ language: node_js
 deploy:
   provider: pages
   skip_cleanup: true
-  github_token: a1395405a2c2ef621e9af3795b6be498b6add0fc
+  github_token: 7a2f6ead7d6c16b5677982d78ab87ccc81243dec
   on:
     branch: master
