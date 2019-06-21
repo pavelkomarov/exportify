@@ -1,4 +1,11 @@
 language: node_js
+
+# run the tests here, in native node because PhantomJS isn't a thing anymore.
+
+# Aight, this is definitively how you do these encrypted keys: `sudo apt install ruby ruby-dev libz-dev`,
+# `gem install travis`, make sure you're in a folder with a .travis.yml, `travis encrypt thekey123456abcde`, and put
+# the result under the thing it's supposed to represent. No VARIABLE=key, no worrying about capitalization or other
+# command line flags, no putting the raw key in here lest github sniff it out and delete your token.
 deploy:
   provider: pages
   github_token:
