@@ -1,30 +1,9 @@
-# This crazy dev is using OSX with Travis for javascript, which is completely unnecessary and breaks without me
-# futzing with his tests. He's using PhantomJS and CasperJS, which have been discontinued for a couple yeras!
-# Clearly there's something wrong here. I'll have to dig in and figure out how to modify
-# the test suite and web page to only use libraries and content delivery networks that aren't broken, and I'll
-# make it work with Linux so Travis doesn't have to spin up something special just for me.
 language: node_js
-
-#os: osx
-
-#before_install:
-#  - brew install phantomjs
-#  - git clone git://github.com/n1k0/casperjs.git casperjs
-#  - export PATH=`pwd`/casperjs/bin/:$PATH
-
-#before_script:
-#  - phantomjs --version
-#  - casperjs --version
-#  - python -m SimpleHTTPServer 8080 &
-#  - sleep 10
-
-#script:
-#  - casperjs test test/integration
-
 deploy:
-  - provider: pages
-    skip_cleanup: true
-    github_token:
-      secure: sCdH3vtCZG30vLtmYYT0uvY1OZejv42t3ctTKbRi5NxixrNWK6qAuOsF7p2Q9oHu7O9EUSDHoVtcGCDtRd6CScFQ+bIK7HjVL13SvxSNMObs+MkjmfwtWQw7MONsrb/yQlf+/GwNQ5WDSU7iwM8ZURlmtKLyDGr9pZvBGrf/jCL7HN5+0czyPyGlUF3otGPh6djDWYlNfQFETEmdQESomdxXyOlhm5y6++ykBpmTuGQfag77V4c/HM+IbcppS8K3g0GTGVlFsvrdYG2gQAh4vwKc8aDsGdhjRMgVhhfNVvI7ZJNEbM2Wehn1unUYPJSYoP9jKNgnS+vBcuN/IEzR73zC2TcBW0QFe80+HZjEXdXRWxDJWy6UHa6B0aFYRl+WrDqxgk5oDmpBgUDMevy9/tnive3Ngijb0K8hWT4BKMkVZdhWs0DaEFev9x1SAk5Y3S64B6IfKQ0NB+skTmb+zWUAVeBO29FAXm08wFgseWGc+R0VbPk5yGJp00doXtcbC38QuYZphqJ6LFNvee0muCuXlW3YJKwXJAV7rS/GU0j0Ox2vXbd1+bZjUQigSQg2Li15nxrTZobXQiL6PKoxQIul8MM7G553TcScWQzIG50p+N5PBwcnHV13Lr7IGp0i4w/3b6eXcp9OwQ0U6jXiVnkRPz0cH5Q6F6yyjuENcqQ=
-    on:
-      branch: master
+- provider: pages
+  skip_cleanup: true
+  github_token:
+    secure: Wq+oElEffDeqDytJoPslZ7LWJoCsiMsT2d0HCmwLiH+lfGB4EzGD/P7IXYTqRZjCffuFbKjBrd7GS/OjUNCyxYH0mLRTQPivClIuNwZjhIEBkQQw+0NSRc/29yDUv9A4Zxpb/J7pK4pqN2hK64w8w3IdUdZeIJ41ZmtET1DdfDNUK7mFXaIThZOFfYjvJVJOEuCRQFQGou1aFzGRmUfODXsdhBj05fSJzQyFc1ySgSTR69YCDUE02DAaVBulzQPrLTChvvqUw7q2XjA0RCG5KuaZuJbS5TgcwJXQ2j/J/jZWGsYt1P0CeeVuLAopT6EpzpDzbq+MngE/h+F31sq4yGKc3A771Uy3Nc/bvjKgLn3u5LNkyNLt3Q0ywGlKmkkdak90J1NIWhZSLOTMt8SbgNbqkJl8pZgXkL2FiSI49nSmSyC3s+8OwWk8uAIfwJYtjjZM/jQwJ+6bh0AQ3vpYviU6wA0ieIoYbUScy9rCpvvYege8Ow4i16vuaiNPUVhX1XIFhfWQsgh4C87+/sQpFMoZsa6nOTiu7Ut/+sAV3k63Jqn8flwW0gAX2LBiEQf+9ZoXEgJ27lPnVAcIFb3QSP/2S8br5MJ0NFsmxJVH3dtsm7T08h/keSzDecOtCtQCzSBwFAIPWA09Vv5NaRCZoijhyYRWIEoCdmedjhT+5pk=
+  on:
+    branch: master
+
