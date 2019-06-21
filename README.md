@@ -1,10 +1,10 @@
-[![Build Status](http://img.shields.io/travis/watsonbox/exportify.svg?style=flat)](https://travis-ci.org/watsonbox/exportify)
+[![Build Status](http://img.shields.io/travis/pavelkomarov/exportify.svg?style=flat)](https://travis-ci.org/pavelkomarov/exportify)
 
-<a href="https://rawgit.com/watsonbox/exportify/master/exportify.html"><img src="screenshot.png"/></a>
+<a href="https://pavelkomarov.com/exportify/exportify.html"><img src="screenshot.png"/></a>
 
 Export your Spotify playlists using the Web API by clicking on the link below:
 
-[https://rawgit.com/watsonbox/exportify/master/exportify.html](https://rawgit.com/watsonbox/exportify/master/exportify.html)
+[https://pavelkomarov.com/exportify/exportify.html](https://pavelkomarov.com/exportify/exportify.html)
 
 As many users have noted, there is no way to export/archive playlists from the Spotify client for safekeeping. This application provides a simple interface for doing that using the Spotify Web API.
 
