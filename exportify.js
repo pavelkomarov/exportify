@@ -5,14 +5,14 @@ function print(obj) {
 }
 
 // A collection of functions to create and send API queries
-window.Utils = {
+utils = {
   // Query the spotify server (by just setting the url) to let it know we want a session. This is literally
   // accomplished by navigating to this web address, where we may have to enter Spotify credentials, then
   // being redirected to the original website.
   // https://developer.spotify.com/documentation/general/guides/authorization-guide/
   authorize() {
     window.location = "https://accounts.spotify.com/authorize" +
-      "?client_id=9950ac751e34487dbbe027c4fd7f8e99" +
+      "?client_id=d99b082b01d74d61a100c9a0e056380b" +
       "&redirect_uri=" + encodeURIComponent([location.protocol, '//', location.host, location.pathname].join('')) +
       "&scope=playlist-read-private%20playlist-read-collaborative" +
       "&response_type=token";
@@ -58,23 +58,23 @@ let PlaylistTable = React.createClass({
     let userId = '';
     let firstPage = typeof url === 'undefined' || url.indexOf('offset=0') > -1;
 
-    window.Utils.apiCall("https://api.spotify.com/v1/me", this.props.access_token).then(function(response) {
+    utils.apiCall("https://api.spotify.com/v1/me", this.props.access_token).then(function(response) {
       userId = response.id;
 
       // Show starred playlist if viewing first page
       if (firstPage) {
         return $.when.apply($, [
-          window.Utils.apiCall(
+          utils.apiCall(
             "https://api.spotify.com/v1/users/" + userId + "/starred",
             this.props.access_token
           ),
-          window.Utils.apiCall(
+          utils.apiCall(
             "https://api.spotify.com/v1/users/" + userId + "/playlists",
             this.props.access_token
           )
         ])
       } else {
-        return window.Utils.apiCall(url, this.props.access_token);
+        return utils.apiCall(url, this.props.access_token);
       }
     }.bind(this)).done(function() {//God, why, JavaScript? Why? These crazy chained constructions
       let response;
@@ -237,13 +237,13 @@ let PlaylistsExporter = {
   export(access_token, playlistCount) {
     let playlistFileNames = [];
 
-    window.Utils.apiCall("https://api.spotify.com/v1/me", access_token).then(function(response) {
+    utils.apiCall("https://api.spotify.com/v1/me", access_token).then(function(response) {
       let limit = 20;
       let userId = response.id;
 
       // Initialize requests with starred playlist
       let requests = [
-        window.Utils.apiCall(
+        utils.apiCall(
           "https://api.spotify.com/v1/users/" + userId + "/starred",
           access_token
         )
@@ -253,7 +253,7 @@ let PlaylistsExporter = {
       for (let offset = 0; offset < playlistCount; offset = offset + limit) {
         let url = "https://api.spotify.com/v1/users/" + userId + "/playlists";
         requests.push(
-          window.Utils.apiCall(url + '?offset=' + offset + '&limit=' + limit, access_token)
+          utils.apiCall(url + '?offset=' + offset + '&limit=' + limit, access_token)
         )
       }
 
@@ -312,7 +312,7 @@ let PlaylistExporter = {
 
     for (let offset = 0; offset < playlist.tracks.total; offset = offset + limit) {
       requests.push(
-        window.Utils.apiCall(playlist.tracks.href.split('?')[0] + '?offset=' + offset + '&limit=' + limit, access_token)
+        utils.apiCall(playlist.tracks.href.split('?')[0] + '?offset=' + offset + '&limit=' + limit, access_token)
       )
     }
 
@@ -391,9 +391,9 @@ $(function() {
     }
   }
 
-  if (!hash) { // if we're on the home page
+  if (!State.access_token) { // if we're on the home page
     $('#loginButton').css('display', 'inline-block')
-  } else if (State.access_token) { // if we were just authorized and got a token
+  } else { // if we were just authorized and got a token
     React.render(<PlaylistTable access_token={State.access_token} />, playlistsContainer);
     window.location = root + "#playlists"
   }
