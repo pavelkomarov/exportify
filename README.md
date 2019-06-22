@@ -1,5 +1,9 @@
 [![Build Status](http://img.shields.io/travis/pavelkomarov/exportify.svg?style=flat)](https://travis-ci.org/pavelkomarov/exportify)
 
+This is a hard fork of [the original Exportify repo](https://github.com/watsonbox/exportify). Watsonbox hasn't updated the code in any meaningful way in four years. Issues are left open; pull requests are left unmerged; the tests are dependent on deprecated frameworks and broken; he's serving through rawgit which is about to go dark for good. In using the service to download some of my own playlists for analysis, I discovered a bug where table rows aren't always the same width (requiring manual edits before you could, say, read the csv as a DataFrame), and I was dismayed the table contains no release year nor genre information. The purpose of this fork is to address these problems. I've set up Travis to deploy the app on a real website (for now just a subdomain of my personal site, since the [exportify.com](exportify.com) domain is taken), registered for my own client id with Spotify, and cleaned up the code as much as I can. Old JavaScript is the worst, but it has been a valuable learning experience.
+
+If you have any problems, open an issue
+
 <a href="https://pavelkomarov.com/exportify/app"><img src="screenshot.png"/></a>
 
 Export your Spotify playlists using the Web API by clicking on the link below:
@@ -10,18 +14,15 @@ As many users have noted, there is no way to export/archive playlists from the S
 
 No data will be saved - the entire application runs in the browser.
 
-
 ## Usage
 
 Click 'Get Started', grant Exportify read-only access to your playlists, then click the 'Export' button to export a playlist.
 
 Click 'Export All' to save a zip file containing a CSV file for each playlist in your account. This may take a while when many playlists exist and/or they are large.
 
-
 ### Re-importing Playlists
 
 Once playlists are saved, it's also pretty straightforward to re-import them into Spotify. Open up the CSV file in Excel, for example, select and copy the `spotify:track:xxx` URIs, then simply create a playlist in Spotify and paste them in.
-
 
 ### Export Format
 
@@ -36,7 +37,8 @@ Track data is exported in [CSV](http://en.wikipedia.org/wiki/Comma-separated_val
 - Track Duration (ms)
 - Added By
 - Added At
-
+- Year
+- Genres
 
 ## Development
 
@@ -47,16 +49,6 @@ python -m SimpleHTTPServer
 ```
 
 Then open [http://localhost:8000/app](http://localhost:8000/app).
-
-
-## Notes
-
-- The CSV export uses the HTML5 download attribute which is not [supported](http://caniuse.com/#feat=download) in all browsers. Where not supported the CSV will be rendered in the browser and must be saved manually.
-
-- According to Spotify [documentation](https://developer.spotify.com/web-api/working-with-playlists/), "Folders are not returned through the Web API at the moment, nor can be created using it".
-
-- It has been [pointed out](https://github.com/watsonbox/exportify/issues/6) that due to the large number of requests required to export all playlists, rate limiting errors may sometimes be encountered. Features will soon be added to make handling these more robust, but in the meantime these issues can be overcome by [creating your own Spotify application](https://github.com/watsonbox/exportify/issues/6#issuecomment-110793132).
-
 
 ## Contributing
 

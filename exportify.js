@@ -253,74 +253,42 @@ let PlaylistExporter = {
   export(access_token, playlist) {
     let promise = this.csvData(access_token, playlist);
     let fileName = this.fileName(playlist);
-    promise.then((data) => { saveAs(new Blob(["\uFEFF" + data], { type: "text/csv;charset=utf-8" }), fileName) });
+    promise.then(data => { saveAs(new Blob(["\uFEFF" + data], { type: "text/csv;charset=utf-8" }), fileName) });
   },
 
   // This is where the magic happens. The access token gives us permission to query this info from Spotify, and the
   // playlist object gives us all the information we need to start asking for songs.
   csvData(access_token, playlist) {
-    // Make asynchronous API calls for 100 songs at a time, and put the results in a list.
+    // Make asynchronous API calls for 100 songs at a time, and put the results (all Promises) in a list.
     let requests = [];
     for (let offset = 0; offset < playlist.tracks.total; offset = offset + 100) {
       requests.push(utils.apiCall(playlist.tracks.href.split('?')[0] + '?offset=' + offset + '&limit=100',
           access_token));
     }
-
-
-    return $.when.apply($, requests).then(function() {
-      let responses = [];
-
-      // Handle either single or multiple responses
-      if (typeof arguments[0] != 'undefined') {
-        if (typeof arguments[0].href == 'undefined') {
-          responses = Array.prototype.slice.call(arguments).map(function(a) { return a[0] });
-        } else {
-          responses = [arguments[0]];
-        }
-      }
-
-      let tracks = responses.map(function(response) {
-        return response.items.map(function(item) {
-          return [
-            item.track.uri,
-            item.track.name,
-            item.track.artists.map(function(artist) { return artist.name }).join(', '),
-            item.track.album.name,
-            item.track.disc_number,
-            item.track.track_number,
-            item.track.duration_ms,
-            item.added_by == null ? '' : item.added_by.uri,
-            item.added_at
-          ].map(function(track) { return '"' + track + '"'; })
+	
+    // "returns a single Promise that resolves when all of the promises passed as an iterable have resolved"
+    // https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Promise/all
+    data_promise = Promise.all(requests).then(responses => {
+      return responses.map(response => { // apply to all responses
+        return response.items.map(song => { // appy to all songs in each response
+          return [song.track.uri, '"'+song.track.name.replace(/"/g,'')+'"', '"'+song.track.album.name.replace(/"/g,'')+'"',
+            song.track.duration_ms, song.track.popularity, song.track.release_date,
+            '"'+song.track.artists.map(artist => { return artist.name }).join(', ')+'"',
+            song.added_by.uri, song.added_at]
         });
       });
-
-      //console.log("tracks x:", JSON.stringify(tracks, null, 2));
-
-      // Flatten the array of pages
-      tracks = $.map(tracks, function(n) { return n })
-
-      tracks.unshift([
-        "Spotify URI",
-        "Track Name",
-        "Artist Name",
-        "Album Name",
-        "Disc Number",
-        "Track Number",
-        "Track Duration (ms)",
-        "Added By",
-        "Added At",
-        //"Release Year",
+	});
+    
+    // label the columns and put in a single csv string
+    return data_promise.then(data => {
+      data = data.flat()
+      data.unshift(["Spotify URI", "Track Name", "Album Name", "Duration (ms)",
+        "Popularity", "Release Date", "Artist Name(s)", "Added By", "Added At"]);
         //"Genres"
-      ]);
 
-      csvContent = '';
-      tracks.forEach(function(infoArray, index){
-        dataString = infoArray.join(",");
-        csvContent += index < tracks.length ? dataString+ "\n" : dataString;
-      });
-
-      return csvContent;
+      csv = '';
+      data.forEach(row => { csv += row.join(",") + "\n" });
+      return csv;
     });
   },
 
