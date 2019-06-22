@@ -3,20 +3,20 @@
 <head>
   <meta charset="utf-8">
   <title>Exportify</title>
+  <link rel="icon" type="image/png" href="favicon.png">
 
   <!-- Bootstrap -->
   <link rel="stylesheet" href="//maxcdn.bootstrapcdn.com/bootstrap/3.3.4/css/bootstrap.min.css">
-  <script src="//maxcdn.bootstrapcdn.com/bootstrap/3.3.4/js/bootstrap.min.js"></script>
   <link rel="stylesheet" href="//maxcdn.bootstrapcdn.com/font-awesome/4.3.0/css/font-awesome.min.css">
 
   <!-- do something about all these libraries. Do I really need them all? -->
   <script src="//ajax.googleapis.com/ajax/libs/jquery/2.1.4/jquery.min.js"></script>
-  <script src="//cdnjs.cloudflare.com/ajax/libs/jquery-mockjax/1.6.2/jquery.mockjax.min.js"></script>  
-  <script src="//cdnjs.cloudflare.com/ajax/libs/jszip/2.5.0/jszip.min.js"></script>
+  <script src="//cdnjs.cloudflare.com/ajax/libs/jquery-mockjax/1.6.2/jquery.mockjax.min.js"></script>
   <script src="//cdnjs.cloudflare.com/ajax/libs/react/0.13.3/react.js"></script>
   <script src="//cdnjs.cloudflare.com/ajax/libs/react/0.13.3/JSXTransformer.js"></script>
 
   <script src="FileSaver.js"></script>
+  <script src="//cdnjs.cloudflare.com/ajax/libs/jszip/2.5.0/jszip.min.js"></script>
 
   <link rel="stylesheet" href="style.css">
   <script type="text/jsx" src="exportify.js"></script>
@@ -25,10 +25,10 @@
 <body>
   <div class="container">
     <div id="header">
-      <h1><i class="fa fa-spotify" style="color: #84BD00"></i> Exportify</h1>
+      <h1><a href="exportify.html"><i class="fa fa-spotify" style="color: #84BD00"></i> Exportify</a></h1>
       <p id="subtitle" class="lead">Export your Spotify playlists.</p>
 
-      <button id="loginButton" type="submit" class="btn btn-default btn-lg" onclick="window.Helpers.authorize()">
+      <button id="loginButton" type="submit" class="btn btn-default btn-lg" onclick="window.Utils.authorize()">
         <i class="fa fa-check-circle-o"></i> Get Started
       </button>
     </div>

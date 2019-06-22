@@ -1,28 +1,26 @@
-window.Helpers = {
-  authorize: function() {
-    var client_id = this.getQueryParam('app_client_id');
+var State = {} // a place to keep track of program state. Gets reset every time the script is fully reloaded.
 
-    // Use Exportify application client_id if none given
-    if (client_id == '') {
-      client_id = "9950ac751e34487dbbe027c4fd7f8e99"
-    }
+function print(obj) {
+  console.log(JSON.stringify(obj, null, 2))
+}
 
+// A collection of functions to create and send API queries
+window.Utils = {
+  // Query the spotify server (by just setting the url) to let it know we want a session. This is literally
+  // accomplished by navigating to this web address, where we may have to enter Spotify credentials, then
+  // being redirected to the original website.
+  // https://developer.spotify.com/documentation/general/guides/authorization-guide/
+  authorize() {
     window.location = "https://accounts.spotify.com/authorize" +
-      "?client_id=" + client_id +
+      "?client_id=9950ac751e34487dbbe027c4fd7f8e99" +
       "&redirect_uri=" + encodeURIComponent([location.protocol, '//', location.host, location.pathname].join('')) +
       "&scope=playlist-read-private%20playlist-read-collaborative" +
       "&response_type=token";
   },
 
-  // http://stackoverflow.com/a/901144/4167042
-  getQueryParam: function(name) {
-    name = name.replace(/[\[]/, "\\[").replace(/[\]]/, "\\]");
-    var regex = new RegExp("[\\?&]" + name + "=([^&#]*)"),
-        results = regex.exec(location.search);
-    return results === null ? "" : decodeURIComponent(results[1].replace(/\+/g, " "));
-  },
-
-  apiCall: function(url, access_token) {
+  // Make an asynchronous call to the server.
+  // https://api.jquery.com/jquery.ajax/
+  apiCall(url, access_token) {
     return $.ajax({
       url: url,
       headers: {
@@ -34,7 +32,7 @@ window.Helpers = {
         window.location = window.location.href.split('#')[0]
       } else if (jqXHR.status == 429) {
         // API Rate-limiting encountered
-        window.location = window.location.href.split('#')[0] + '?rate_limit_message=true'
+        $('#rateLimitMessage').show()
       } else {
         // Otherwise report the error so user can raise an issue
         alert(jqXHR.responseText);
@@ -43,8 +41,11 @@ window.Helpers = {
   }
 }
 
-var PlaylistTable = React.createClass({
-  getInitialState: function() {
+// The table of this user's playlists, to be displayed mid-page in the playlistsContainer
+let PlaylistTable = React.createClass({
+  // This is a sort of constructor to be used with new React classes that you're just creating
+  // https://stackoverflow.com/questions/30668326/what-is-the-difference-between-using-constructor-vs-getinitialstate-in-react-r
+  getInitialState() {
     return {
       playlists: [],
       playlistCount: 0,
@@ -53,31 +54,31 @@ var PlaylistTable = React.createClass({
     };
   },
 
-  loadPlaylists: function(url) {
-    var userId = '';
-    var firstPage = typeof url === 'undefined' || url.indexOf('offset=0') > -1;
+  loadPlaylists(url) {
+    let userId = '';
+    let firstPage = typeof url === 'undefined' || url.indexOf('offset=0') > -1;
 
-    window.Helpers.apiCall("https://api.spotify.com/v1/me", this.props.access_token).then(function(response) {
+    window.Utils.apiCall("https://api.spotify.com/v1/me", this.props.access_token).then(function(response) {
       userId = response.id;
 
       // Show starred playlist if viewing first page
       if (firstPage) {
         return $.when.apply($, [
-          window.Helpers.apiCall(
+          window.Utils.apiCall(
             "https://api.spotify.com/v1/users/" + userId + "/starred",
             this.props.access_token
           ),
-          window.Helpers.apiCall(
+          window.Utils.apiCall(
             "https://api.spotify.com/v1/users/" + userId + "/playlists",
             this.props.access_token
           )
         ])
       } else {
-        return window.Helpers.apiCall(url, this.props.access_token);
+        return window.Utils.apiCall(url, this.props.access_token);
       }
-    }.bind(this)).done(function() {
-      var response;
-      var playlists = [];
+    }.bind(this)).done(function() {//God, why, JavaScript? Why? These crazy chained constructions
+      let response;
+      let playlists = [];
 
       if (arguments[1] === 'success') {
         response = arguments[0];
@@ -101,15 +102,15 @@ var PlaylistTable = React.createClass({
     }.bind(this))
   },
 
-  exportPlaylists: function() {
+  exportPlaylists() {
     PlaylistsExporter.export(this.props.access_token, this.state.playlistCount);
   },
 
-  componentDidMount: function() {
+  componentDidMount() {
     this.loadPlaylists(this.props.url);
   },
 
-  render: function() {
+  render() {
     if (this.state.playlists.length > 0) {
       return (
         <div id="playlists">
@@ -123,7 +124,9 @@ var PlaylistTable = React.createClass({
                 <th style={{width: "100px"}}>Tracks</th>
                 <th style={{width: "120px"}}>Public?</th>
                 <th style={{width: "120px"}}>Collaborative?</th>
-                <th style={{width: "100px"}} className="text-right"><button className="btn btn-default btn-xs" type="submit" onClick={this.exportPlaylists}><span className="fa fa-file-archive-o"></span> Export All</button></th>
+                <th style={{width: "100px"}} className="text-right">
+                <button className="btn btn-default btn-xs" type="submit" onClick={this.exportPlaylists}>
+                <span className="fa fa-file-archive-o"></span> Export All</button></th>
               </tr>
             </thead>
             <tbody>
@@ -141,7 +144,7 @@ var PlaylistTable = React.createClass({
   }
 });
 
-var PlaylistRow = React.createClass({
+let PlaylistRow = React.createClass({
   exportPlaylist: function() {
     PlaylistExporter.export(this.props.access_token, this.props.playlist);
   },
@@ -188,7 +191,7 @@ var PlaylistRow = React.createClass({
   }
 });
 
-var Paginator = React.createClass({
+let Paginator = React.createClass({
   nextClick: function(e) {
     e.preventDefault()
 
@@ -230,33 +233,33 @@ var Paginator = React.createClass({
 });
 
 // Handles exporting all playlist data as a zip file
-var PlaylistsExporter = {
-  export: function(access_token, playlistCount) {
-    var playlistFileNames = [];
+let PlaylistsExporter = {
+  export(access_token, playlistCount) {
+    let playlistFileNames = [];
 
-    window.Helpers.apiCall("https://api.spotify.com/v1/me", access_token).then(function(response) {
-      var limit = 20;
-      var userId = response.id;
+    window.Utils.apiCall("https://api.spotify.com/v1/me", access_token).then(function(response) {
+      let limit = 20;
+      let userId = response.id;
 
       // Initialize requests with starred playlist
-      var requests = [
-        window.Helpers.apiCall(
+      let requests = [
+        window.Utils.apiCall(
           "https://api.spotify.com/v1/users/" + userId + "/starred",
           access_token
         )
       ];
 
       // Add other playlists
-      for (var offset = 0; offset < playlistCount; offset = offset + limit) {
-        var url = "https://api.spotify.com/v1/users/" + userId + "/playlists";
+      for (let offset = 0; offset < playlistCount; offset = offset + limit) {
+        let url = "https://api.spotify.com/v1/users/" + userId + "/playlists";
         requests.push(
-          window.Helpers.apiCall(url + '?offset=' + offset + '&limit=' + limit, access_token)
+          window.Utils.apiCall(url + '?offset=' + offset + '&limit=' + limit, access_token)
         )
       }
 
       $.when.apply($, requests).then(function() {
-        var playlists = [];
-        var playlistExports = [];
+        let playlists = [];
+        let playlistExports = [];
 
         // Handle either single or multiple responses
         if (typeof arguments[0].href == 'undefined') {
@@ -280,14 +283,14 @@ var PlaylistsExporter = {
 
         return $.when.apply($, playlistExports);
       }).then(function() {
-        var zip = new JSZip();
-        var responses = [];
+        let zip = new JSZip();
+        let responses = [];
 
         $(arguments).each(function(i, response) {
           zip.file(playlistFileNames[i], response)
         });
 
-        var content = zip.generate({ type: "blob" });
+        let content = zip.generate({ type: "blob" });
         saveAs(content, "spotify_playlists.zip");
       });
     });
@@ -295,26 +298,26 @@ var PlaylistsExporter = {
 }
 
 // Handles exporting a single playlist as a CSV file
-var PlaylistExporter = {
-  export: function(access_token, playlist) {
+let PlaylistExporter = {
+  export(access_token, playlist) {
     this.csvData(access_token, playlist).then(function(data) {
-      var blob = new Blob(["\uFEFF" + data], { type: "text/csv;charset=utf-8" });
+      let blob = new Blob(["\uFEFF" + data], { type: "text/csv;charset=utf-8" });
       saveAs(blob, this.fileName(playlist));
     }.bind(this))
   },
 
   csvData: function(access_token, playlist) {
-    var requests = [];
-    var limit = 100;
+    let requests = [];
+    let limit = 100;
 
-    for (var offset = 0; offset < playlist.tracks.total; offset = offset + limit) {
+    for (let offset = 0; offset < playlist.tracks.total; offset = offset + limit) {
       requests.push(
-        window.Helpers.apiCall(playlist.tracks.href.split('?')[0] + '?offset=' + offset + '&limit=' + limit, access_token)
+        window.Utils.apiCall(playlist.tracks.href.split('?')[0] + '?offset=' + offset + '&limit=' + limit, access_token)
       )
     }
 
     return $.when.apply($, requests).then(function() {
-      var responses = [];
+      let responses = [];
 
       // Handle either single or multiple responses
       if (typeof arguments[0] != 'undefined') {
@@ -325,7 +328,7 @@ var PlaylistExporter = {
         }
       }
 
-      var tracks = responses.map(function(response) {
+      let tracks = responses.map(function(response) {
         return response.items.map(function(item) {
           return [
             item.track.uri,
@@ -341,6 +344,8 @@ var PlaylistExporter = {
         });
       });
 
+      //console.log("tracks x:", JSON.stringify(tracks, null, 2));
+
       // Flatten the array of pages
       tracks = $.map(tracks, function(n) { return n })
 
@@ -353,7 +358,9 @@ var PlaylistExporter = {
         "Track Number",
         "Track Duration (ms)",
         "Added By",
-        "Added At"
+        "Added At",
+        //"Release Year",
+        //"Genres"
       ]);
 
       csvContent = '';
@@ -371,20 +378,23 @@ var PlaylistExporter = {
   }
 }
 
+// This is equivalento to $(document).ready(function() {...}). The function is a callback, called every time the page
+// loads anew.
+// https://api.jquery.com/ready/
 $(function() {
-  var vars = window.location.hash.substring(1).split('&');
-  var key = {};
-  for (i=0; i<vars.length; i++) {
-    var tmp = vars[i].split('=');
-    key[tmp[0]] = tmp[1];
+  let [root, hash] = window.location.href.split('#')
+  if (hash) {
+    let params = hash.split('&');
+    for (let i = 0; i < params.length; i++) {
+      let [k, v] = params[i].split('=');
+      State[k] = v;
+    }
   }
 
-  if (window.Helpers.getQueryParam('rate_limit_message') != '') {
-    // Show rate limit message
-    $('#rateLimitMessage').show();
-  } else if (typeof key['access_token'] === 'undefined') {
+  if (!hash) { // if we're on the home page
     $('#loginButton').css('display', 'inline-block')
-  } else {
-    React.render(<PlaylistTable access_token={key['access_token']} />, playlistsContainer);
+  } else if (State.access_token) { // if we were just authorized and got a token
+    React.render(<PlaylistTable access_token={State.access_token} />, playlistsContainer);
+    window.location = root + "#playlists"
   }
 });
