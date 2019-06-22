@@ -1,10 +1,10 @@
 [![Build Status](http://img.shields.io/travis/pavelkomarov/exportify.svg?style=flat)](https://travis-ci.org/pavelkomarov/exportify)
 
-<a href="https://pavelkomarov.com/exportify/exportify.html"><img src="screenshot.png"/></a>
+<a href="https://pavelkomarov.com/exportify/app"><img src="screenshot.png"/></a>
 
 Export your Spotify playlists using the Web API by clicking on the link below:
 
-[https://pavelkomarov.com/exportify/exportify.html](https://pavelkomarov.com/exportify/exportify.html)
+[https://pavelkomarov.com/exportify/app](https://pavelkomarov.com/exportify/app)
 
 As many users have noted, there is no way to export/archive playlists from the Spotify client for safekeeping. This application provides a simple interface for doing that using the Spotify Web API.
 
@@ -46,7 +46,7 @@ Developers wishing to make changes to Exportify should use a local web server. F
 python -m SimpleHTTPServer
 ```
 
-Then open [http://localhost:8000/exportify.html](http://localhost:8000/exportify.html).
+Then open [http://localhost:8000/app](http://localhost:8000/app).
 
 
 ## Notes
