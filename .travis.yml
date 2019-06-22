@@ -1,5 +1,7 @@
 language: node_js
 
+script: echo "Be excellent to each other!"
+
 # run the tests here, in native node because PhantomJS isn't a thing anymore.
 
 # Aight, this is definitively how you do these encrypted keys: `sudo apt install ruby ruby-dev libz-dev`,
