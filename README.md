@@ -1,6 +1,8 @@
 [![Build Status](http://img.shields.io/travis/pavelkomarov/exportify.svg?style=flat)](https://travis-ci.org/pavelkomarov/exportify)
 
-This is a hard fork of [the original Exportify repo](https://github.com/watsonbox/exportify). I've simplified the code, gotten rid of the old tests, set up automatic deployment to github pages, fixed a bug parsing bug, and enhanced the set of features. 
+This is a hard fork of [the original Exportify repo](https://github.com/watsonbox/exportify). I've simplified the code, gotten rid of the old tests, set up automatic deployment to github pages, fixed a bug parsing bug, and enhanced the set of features.
+
+Note: Because I'm interested in genre information, and genre lives in the artist JSON, I have to make server queries not only for the list of playlists and chunks of (100 at a time) songs from those lists, but also one call for each artist. If your music tastes are like mine, then this causes the script to hit the ceiling pretty fast, and you'll see the rate-limiting error message. But, the browser is actually caching those packets, so if you rerun the script (wait a few seconds and click the button again) a few times, it keeps filling in its missing pieces until it succeeds.
 
 <a href="https://pavelkomarov.com/exportify/app"><img src="screenshot.png"/></a>
 
