@@ -182,11 +182,11 @@ let Paginator = React.createClass({
 // Handles exporting all playlist data as a zip file
 let ZipExporter = {
 	export(access_token, playlists) {
-		let zip = new JSZip();
 		let csv_promises = playlists.map(playlist => PlaylistExporter.csvData(access_token, playlist));
 		let fileNames = playlists.map(playlist => PlaylistExporter.fileName(playlist));
 
 		Promise.all(csv_promises).then(csvs => {
+			let zip = new JSZip();
 			csvs.forEach((csv, i) => { zip.file(fileNames[i], csv); });
 			let content = zip.generate({ type: "blob" });
 			saveAs(content, "spotify_playlists.zip");
@@ -216,23 +216,42 @@ let PlaylistExporter = {
 	
 		// "returns a single Promise that resolves when all of the promises passed as an iterable have resolved"
 		// https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Promise/all
+		let artist_hrefs = new Set();
 		let data_promise = Promise.all(requests).then(responses => {
 			return responses.map(response => { // apply to all responses
 				return response.items.map(song => { // appy to all songs in each response
+					song.track.artists.forEach(a => { artist_hrefs.add(a.href) });
 					return [song.track.uri, '"'+song.track.name.replace(/"/g,'')+'"', '"'+song.track.album.name.replace(/"/g,'')+'"',
-						song.track.duration_ms, song.track.popularity, song.track.release_date,
-						'"'+song.track.artists.map(artist => { return artist.name }).join(', ')+'"',
+						song.track.duration_ms, song.track.popularity, song.track.album.release_date,
+						'"'+song.track.artists.map(artist => { return artist.name }).join(',')+'"',
 						song.added_by.uri, song.added_at]
 				});
 			});
 		});
-		
-		// label the columns and put in a single csv string
-		return data_promise.then(data => {
-			data = data.flat()
+
+		// Make queries on all the artists, because this json is where genre information lives. Unfortunately this
+		// means a second wave of traffic.
+		let genre_promise = data_promise.then(() => {
+			let artists_promises = Array.from(artist_hrefs).map(href => utils.apiCall(href, access_token));
+		  return Promise.all(artists_promises).then(responses => {
+			  let artist_genres = {};
+			  responses.forEach(artist => { artist_genres[artist.name] = artist.genres.join(','); });
+			  return artist_genres;
+			});
+		});
+
+		// join genres to the table, label the columns, and put all data in a single csv string
+		return Promise.all([data_promise, genre_promise]).then(values => {
+			[data, artist_genres] = values;
+
+			data = data.flat();
+			data.forEach(row => {
+				artists = row[6].substring(1, row[6].length-1).split(','); // strip the quotes
+				deduplicated_genres = new Set(artists.map(a => artist_genres[a]).join(",").split(",")); // join and split and take set
+				row.push('"'+Array.from(deduplicated_genres).join(",")+'"');
+			});
 			data.unshift(["Spotify URI", "Track Name", "Album Name", "Duration (ms)",
-				"Popularity", "Release Date", "Artist Name(s)", "Added By", "Added At"]);
-				//"Genres"
+				"Popularity", "Release Date", "Artist Name(s)", "Added By", "Added At", "Genres"]);
 
 			csv = '';
 			data.forEach(row => { csv += row.join(",") + "\n" });
