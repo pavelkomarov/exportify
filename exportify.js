@@ -9,7 +9,6 @@ utils = {
 	// being redirected to the original website.
 	// https://developer.spotify.com/documentation/general/guides/authorization-guide/
 	authorize() {
-		print("redirect_uri ", encodeURIComponent([location.protocol, '//', location.host, location.pathname].join('')));
 		window.location = "https://accounts.spotify.com/authorize" +
 			"?client_id=d99b082b01d74d61a100c9a0e056380b" +
 			"&redirect_uri=" + encodeURIComponent([location.protocol, '//', location.host, location.pathname].join('')) +
@@ -266,7 +265,7 @@ let PlaylistExporter = {
 	}
 }
 
-
+// All this bare code runs when the page loads.
 let [root, hash] = window.location.href.split('#')
 dict = {}
 if (hash) {
