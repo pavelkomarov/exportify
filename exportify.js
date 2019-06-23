@@ -24,7 +24,7 @@ utils = {
 		return promise.then(response => {
 			if (response.ok) { return response.json(); }
 			else if (response.status == 401) { window.location = window.location.href.split('#')[0]; } // Return to home page after auth token expiry
-			else if (response.status == 429) { $('#rateLimitMessage').show(); } // API Rate-limiting encountered
+			else if (response.status == 429) { document.getElementById('rateLimitMessage').style.display = 'block'; } // API Rate-limiting encountered
 			else { alert(response.status); }
 		});
 	}
@@ -66,9 +66,9 @@ let PlaylistTable = React.createClass({
 					prevURL: response.previous
 				});
 
-				$('#playlists').fadeIn();
-				$('#subtitle').text((response.offset + 1) + '-' +
-					(response.offset + response.items.length) + ' of ' + response.total + ' playlists')
+				document.getElementById('playlists').style.display = 'block';
+				document.getElementById('subtitle').textContent = (response.offset + 1) + '-' +
+					(response.offset + response.items.length) + ' of ' + response.total + ' playlists';
 			}
 		});
 	},
@@ -265,25 +265,21 @@ let PlaylistExporter = {
 	}
 }
 
-// This is equivalento to jquery(document).ready(() => {...}). The function is a callback, called every time
-// the page loads anew.
-// https://api.jquery.com/ready/
-$(() => {
-	let [root, hash] = window.location.href.split('#')
-	dict = {}
-	if (hash) {
-		let params = hash.split('&');
-		for (let i = 0; i < params.length; i++) {
-			let [k, v] = params[i].split('=');
-			dict[k] = v;
-		}
-	}
 
-	if (!dict.access_token) { // if we're on the home page
-		$('#loginButton').css('display', 'inline-block')
-	} else { // if we were just authorized and got a token
-		// variable={value} makes that variable accessible to all React components via this.props.variable!
-		React.render(<PlaylistTable access_token={dict.access_token} />, playlistsContainer);
-		window.location = root + "#playlists"
+let [root, hash] = window.location.href.split('#')
+dict = {}
+if (hash) {
+	let params = hash.split('&');
+	for (let i = 0; i < params.length; i++) {
+		let [k, v] = params[i].split('=');
+		dict[k] = v;
 	}
-});
+}
+
+if (!dict.access_token) { // if we're on the home page
+	document.getElementById('loginButton').style.display = 'inline-block';
+} else { // if we were just authorized and got a token
+	// variable={value} makes that variable accessible to all React components via this.props.variable!
+	React.render(<PlaylistTable access_token={dict.access_token} />, playlistsContainer);
+	window.location = root + "#playlists"
+}
