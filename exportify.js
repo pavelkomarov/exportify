@@ -233,7 +233,7 @@ let PlaylistExporter = {
 		// means a second wave of traffic.
 		let genre_promise = data_promise.then(() => {
 			let artists_promises = Array.from(artist_hrefs).map(href => utils.apiCall(href, access_token));
-		  return Promise.all(artists_promises).then(responses => {
+			return Promise.all(artists_promises).then(responses => {
 			  let artist_genres = {};
 			  responses.forEach(artist => { artist_genres[artist.name] = artist.genres.join(','); });
 			  return artist_genres;
@@ -248,7 +248,7 @@ let PlaylistExporter = {
 			data.forEach(row => {
 				artists = row[6].substring(1, row[6].length-1).split(','); // strip the quotes
 				deduplicated_genres = new Set(artists.map(a => artist_genres[a]).join(",").split(",")); // join and split and take set
-				row.push('"'+Array.from(deduplicated_genres).join(",")+'"');
+				row.push('"'+Array.from(deduplicated_genres).filter(x => x != "").join(",")+'"'); // remove empty strings
 			});
 			data.unshift(["Spotify URI", "Track Name", "Album Name", "Duration (ms)",
 				"Popularity", "Release Date", "Artist Name(s)", "Added By", "Added At", "Genres"]);
