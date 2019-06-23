@@ -1,8 +1,6 @@
 [![Build Status](http://img.shields.io/travis/pavelkomarov/exportify.svg?style=flat)](https://travis-ci.org/pavelkomarov/exportify)
 
-This is a hard fork of [the original Exportify repo](https://github.com/watsonbox/exportify). Watsonbox hasn't updated the code in any meaningful way in four years. Issues are left open; pull requests are left unmerged; the tests are dependent on deprecated frameworks and broken; he's serving through rawgit which is about to go dark for good. In using the service to download some of my own playlists for analysis, I discovered a bug where table rows aren't always the same width (requiring manual edits before you could, say, read the csv as a DataFrame), and I was dismayed the table contains no release year nor genre information. The purpose of this fork is to address these problems. I've set up Travis to deploy the app on a real website (for now just a subdomain of my personal site, since the [exportify.com](exportify.com) domain is taken), registered for my own client id with Spotify, and cleaned up the code as much as I can. Old JavaScript is the worst, but it has been a valuable learning experience.
-
-If you have any problems, open an issue
+This is a hard fork of [the original Exportify repo](https://github.com/watsonbox/exportify). I've simplified the code, gotten rid of the old tests, set up automatic deployment to github pages, fixed a bug parsing bug, and enhanced the set of features. 
 
 <a href="https://pavelkomarov.com/exportify/app"><img src="screenshot.png"/></a>
 
