@@ -19,7 +19,8 @@ utils = {
 	// Make an asynchronous call to the server. Promises are *wierd*. Careful here! You have to call .json() on the
 	// promise returned by the fetch to get a second promise that has the actual data in it!
 	// https://developer.mozilla.org/en-US/docs/Web/API/Fetch_API/Using_Fetch
-	apiCall(url, access_token) {
+	async apiCall(url, access_token, delay=0) {
+		await new Promise(r => setTimeout(r, delay)); // JavaScript equivalent of sleep(delay)
 		let promise = fetch(url, { headers: { 'Authorization': 'Bearer ' + access_token} });
 		return promise.then(response => {
 			if (response.ok) { return response.json(); }
@@ -68,7 +69,9 @@ let PlaylistTable = React.createClass({
 
 				document.getElementById('playlists').style.display = 'block';
 				document.getElementById('subtitle').textContent = (response.offset + 1) + '-' +
-					(response.offset + response.items.length) + ' of ' + response.total + ' playlists';
+					(response.offset + response.items.length) + ' of ' + response.total + ' playlists\n';
+				document.getElementById('instr').textContent = "The script is rate limited to 10 API calls per second, so for "
+					+ "large playlists it takes a while to run. Just click once and wait."
 			}
 		});
 	},
@@ -211,7 +214,7 @@ let PlaylistExporter = {
 		let requests = [];
 		for (let offset = 0; offset < playlist.tracks.total; offset = offset + 100) {
 			requests.push(utils.apiCall(playlist.tracks.href.split('?')[0] + '?offset=' + offset + '&limit=100',
-					access_token));
+					access_token, offset));
 		}
 	
 		// "returns a single Promise that resolves when all of the promises passed as an iterable have resolved"
@@ -232,7 +235,7 @@ let PlaylistExporter = {
 		// Make queries on all the artists, because this json is where genre information lives. Unfortunately this
 		// means a second wave of traffic.
 		let genre_promise = data_promise.then(() => {
-			let artists_promises = Array.from(artist_hrefs).map(href => utils.apiCall(href, access_token));
+			let artists_promises = Array.from(artist_hrefs).map((href, i) => utils.apiCall(href, access_token, 100*i));
 			return Promise.all(artists_promises).then(responses => {
 			  let artist_genres = {};
 			  responses.forEach(artist => { artist_genres[artist.name] = artist.genres.join(','); });

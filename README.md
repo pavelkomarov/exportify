@@ -28,14 +28,13 @@ Track data is exported in [CSV](http://en.wikipedia.org/wiki/Comma-separated_val
 
 - Spotify URI
 - Track Name
-- Artist Name
 - Album Name
-- Disc Number
-- Track Number
-- Track Duration (ms)
+- Duration (ms)
+- Popularity
+- Release Date
+- Artist Name(s)
 - Added By
 - Added At
-- Year
 - Genres
 
 ## Development

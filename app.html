@@ -1,43 +1,44 @@
 <!doctype html>
 <html lang="en">
 <head>
-  <meta charset="utf-8">
-  <title>Exportify</title>
-  <link rel="icon" type="image/png" href="favicon.png">
+	<meta charset="utf-8">
+	<title>Exportify</title>
+	<link rel="icon" type="image/png" href="favicon.png">
 
-  <!-- Bootstrap -->
-  <link rel="stylesheet" href="//maxcdn.bootstrapcdn.com/bootstrap/3.3.4/css/bootstrap.min.css">
-  <link rel="stylesheet" href="//maxcdn.bootstrapcdn.com/font-awesome/4.3.0/css/font-awesome.min.css">
+	<!-- Bootstrap -->
+	<link rel="stylesheet" href="//maxcdn.bootstrapcdn.com/bootstrap/3.3.4/css/bootstrap.min.css">
+	<link rel="stylesheet" href="//maxcdn.bootstrapcdn.com/font-awesome/4.3.0/css/font-awesome.min.css">
 
-  <!-- React.js -->
-  <script src="//cdnjs.cloudflare.com/ajax/libs/react/0.13.3/react.js"></script>
-  <script src="//cdnjs.cloudflare.com/ajax/libs/react/0.13.3/JSXTransformer.js"></script>
+	<!-- React.js -->
+	<script src="//cdnjs.cloudflare.com/ajax/libs/react/0.13.3/react.js"></script>
+	<script src="//cdnjs.cloudflare.com/ajax/libs/react/0.13.3/JSXTransformer.js"></script>
 
-  <!-- IO utils -->
-  <script src="FileSaver.js"></script>
-  <script src="//cdnjs.cloudflare.com/ajax/libs/jszip/2.5.0/jszip.min.js"></script>
+	<!-- IO utils -->
+	<script src="FileSaver.js"></script>
+	<script src="//cdnjs.cloudflare.com/ajax/libs/jszip/2.5.0/jszip.min.js"></script>
 
-  <link rel="stylesheet" href="style.css">
-  <script type="text/jsx" src="exportify.js"></script>
+	<link rel="stylesheet" href="style.css">
+	<script type="text/jsx" src="exportify.js"></script>
 </head>
 
 <body>
-  <div class="container">
-    <div id="header">
-      <h1><a href="app.html"><i class="fa fa-spotify" style="color: #84BD00"></i> Exportify</a></h1>
-      <p id="subtitle" class="lead">Export your Spotify playlists.</p>
+	<div class="container">
+		<div id="header">
+			<h1><a href="app.html"><i class="fa fa-spotify" style="color: #84BD00"></i> Exportify</a></h1>
+			<p id="subtitle" class="lead">Export your Spotify playlists.</p>
+			<p id="instr"/>
 
-      <button id="loginButton" type="submit" class="btn btn-default btn-lg" onclick="utils.authorize()">
-        <i class="fa fa-check-circle-o"></i> Get Started
-      </button>
-    </div>
+			<button id="loginButton" type="submit" class="btn btn-default btn-lg" onclick="utils.authorize()">
+				<i class="fa fa-check-circle-o"></i> Get Started
+			</button>
+		</div>
 
-    <div id="playlistsContainer"></div>
+		<div id="playlistsContainer"></div>
 
-    <div id="rateLimitMessage" class="lead">
-      <p><i class="fa fa-bolt" style="font-size: 50px; margin-bottom: 20px"></i></p>
-      <p>Exportify has encountered a <a target="_blank" href="https://developer.spotify.com/web-api/user-guide/#rate-limiting">rate limiting</a> error. Because I'm interested in genre information, and genre lives in the artist JSON, I have to make server queries not only for the list of playlists and chunks of (100 at a time) songs from those lists, but also one call for each artist. If your music tastes are as variable as mine or you're trying to export too much at once, then the script will hit the ceiling pretty fast. But! the browser is actually caching those packets, so if you rerun the script (wait a few seconds and click the button again) a few times, it keeps filling in its missing pieces until it succeeds. Open developer tools with <tt>ctrl+shift+E</tt> and watch under the network tab to see this in action. Good luck.</p>
-    <div>
-  </div><!-- /.container -->
+		<div id="rateLimitMessage" class="lead">
+			<p><i class="fa fa-bolt" style="font-size: 50px; margin-bottom: 20px"></i></p>
+			<p>Exportify has encountered a <a target="_blank" href="https://developer.spotify.com/web-api/user-guide/#rate-limiting">rate limiting</a> error. Because I'm interested in genre information, and genre lives in the artist JSON, I have to make server queries not only for the list of playlists and chunks of (100 at a time) songs from those lists, but also one call for each artist. If your music tastes are as variable as mine or you're trying to export too much at once, then the script will hit the ceiling pretty fast. But! the browser is actually caching those packets, so if you rerun the script (wait a few seconds and click the button again) a few times, it keeps filling in its missing pieces until it succeeds. Open developer tools with <tt>ctrl+shift+E</tt> and watch under the network tab to see this in action. Good luck.</p>
+		<div>
+	</div><!-- /.container -->
 </body>
 </html>
