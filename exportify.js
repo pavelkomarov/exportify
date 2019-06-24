@@ -70,8 +70,8 @@ let PlaylistTable = React.createClass({
 				document.getElementById('playlists').style.display = 'block';
 				document.getElementById('subtitle').textContent = (response.offset + 1) + '-' +
 					(response.offset + response.items.length) + ' of ' + response.total + ' playlists\n';
-				document.getElementById('instr').textContent = "The script is rate limited to 10 API calls per second, so for "
-					+ "large playlists it takes a while to run. Just click once and wait."
+				document.getElementById('instr').textContent = "The script is rate limited to 10 API calls per second, "
+					+ "so for large playlists it takes a while to run. Just click once and wait."
 			}
 		});
 	},
@@ -137,8 +137,8 @@ let PlaylistRow = React.createClass({
 		return ( // actual html for one row of the table
 			<tr key={p.id}>
 				<td>{this.renderIcon(p)}</td>
-				<td><a href={p.uri}>{p.name}</a></td>
-				<td><a href={p.owner.uri}>{p.owner.id}</a></td>
+				<td><a href={p.external_urls.spotify}>{p.name}</a></td>
+				<td><a href={p.owner.external_urls.spotify}>{p.owner.id}</a></td>
 				<td>{p.tracks.total}</td>
 				<td>{this.renderTickCross(p.public)}</td>
 				<td>{this.renderTickCross(p.collaborative)}</td>
@@ -250,7 +250,7 @@ let PlaylistExporter = {
 			data = data.flat();
 			data.forEach(row => {
 				artists = row[6].substring(1, row[6].length-1).split(','); // strip the quotes
-				deduplicated_genres = new Set(artists.map(a => artist_genres[a]).join(",").split(",")); // join and split and take set
+				deduplicated_genres = new Set(artists.map(a => artist_genres[a]).join(",").split(",")); // in case multiple artists
 				row.push('"'+Array.from(deduplicated_genres).filter(x => x != "").join(",")+'"'); // remove empty strings
 			});
 			data.unshift(["Spotify URI", "Track Name", "Album Name", "Duration (ms)",
