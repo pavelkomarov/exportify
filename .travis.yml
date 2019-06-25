@@ -1,8 +1,13 @@
-language: node_js
+language: python
+python:
+- 3.6
 
-script: echo "Be excellent to each other!"
+install:
+- pip install notebook
 
-# run the tests here, in native node because PhantomJS isn't a thing anymore.
+script:
+- echo "Be excellent to each other!"
+- python -m notebook --to html taste_analysis.ipynb
 
 # Aight, this is definitively how you do these encrypted keys: `sudo apt install ruby ruby-dev libz-dev`,
 # `gem install travis`, make sure you're in a folder with a .travis.yml, `travis encrypt thekey123456abcde`, and put
