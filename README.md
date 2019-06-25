@@ -1,6 +1,7 @@
 [![Build Status](http://img.shields.io/travis/pavelkomarov/exportify.svg?style=flat)](https://travis-ci.org/pavelkomarov/exportify)
+[![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/pavelkomarov/exportify/master)
 
-This is a hard fork of [the original Exportify repo](https://github.com/watsonbox/exportify). I've simplified the code, gotten rid of the old tests, set up automatic deployment to github pages, fixed a parsing bug, and enhanced the set of features.
+This is a hard fork of [the original Exportify repo](https://github.com/watsonbox/exportify). I've simplified the code, gotten rid of the old tests, set up automatic deployment to github pages, fixed a parsing bug, enhanced the set of features, and added an ipython notebook to do something interesting with the data.
 
 <a href="https://pavelkomarov.com/exportify/app"><img src="screenshot.png"/></a>
 
