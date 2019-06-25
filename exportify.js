@@ -2,6 +2,8 @@ function print(label, obj) {
 	console.log(label + JSON.stringify(obj, null, 2))
 }
 
+error = '<p><i class="fa fa-bolt" style="font-size: 50px; margin-bottom: 20px"></i></p><p>Exportify has encountered a <a target="_blank" href="https://developer.spotify.com/web-api/user-guide/#rate-limiting">rate limiting</a> error. Because I am interested in genre information, and genre lives in the artist JSON, I have to make server queries not only for the list of playlists and chunks of (100 at a time) songs from those lists, but also one call for each artist. If your music tastes are as variable as mine or you are trying to export too much at once, then the script will hit the ceiling pretty fast. But! the browser is actually caching those packets, so if you rerun the script (wait a minute and click the button again) a few times, it keeps filling in its missing pieces until it succeeds. Open developer tools with <tt>ctrl+shift+E</tt> and watch under the network tab to see this in action. Good luck.</p>';
+
 // A collection of functions to create and send API queries
 utils = {
 	// Query the spotify server (by just setting the url) to let it know we want a session. This is literally
@@ -23,32 +25,28 @@ utils = {
 		await new Promise(r => setTimeout(r, delay)); // JavaScript equivalent of sleep(delay)
 		let promise = fetch(url, { headers: { 'Authorization': 'Bearer ' + access_token} });
 		return promise.then(response => {
-			if (response.ok) { return response.json(); }
+			if (response.ok) { return response.json();}
 			else if (response.status == 401) { window.location = window.location.href.split('#')[0]; } // Return to home page after auth token expiry
-			else if (response.status == 429) { document.getElementById('rateLimitMessage').style.display = 'block'; } // API Rate-limiting encountered
+			else if (response.status == 429) { rateLimitMessage.innerHTML = error; } // API Rate-limiting encountered
 			else { alert(response.status); }
 		});
 	}
 }
 
 // The table of this user's playlists, to be displayed mid-page in the playlistsContainer
-let PlaylistTable = React.createClass({
-	// This is a sort of constructor to be used with new React classes that you're just creating
+class PlaylistTable extends React.Component {
+	// By default the constructor passes props to super. If you want some additional stuff, you have to override.
 	// https://stackoverflow.com/questions/30668326/what-is-the-difference-between-using-constructor-vs-getinitialstate-in-react-r
-	getInitialState() {
-		return {
-			playlists: [],
-			playlistCount: 0,
-			nextURL: null,
-			prevURL: null
-		};
-	},
+	constructor(props) {
+    super(props);
+    this.state = { playlists: [], playlistCount: 0, nextURL: null, prevURL: null };
+  }
 
 	// "componentDidMount() is invoked immediately after a component is mounted (inserted into the tree).
 	// Initialization that requires DOM nodes should go here."
 	componentDidMount() {
 		this.loadPlaylists(this.props.url);
-	}, 
+	} 
 
 	// Retrieve and display the list of user playlists. There are three steps: (1) retrieve data about the user,
 	// (2) wait for it to come back, then use it to ask for the list of playlists, (3) wait for that to come back,
@@ -58,129 +56,113 @@ let PlaylistTable = React.createClass({
 		promise = promise.then(data => {
 			return utils.apiCall("https://api.spotify.com/v1/users/" + data.id + "/playlists", this.props.access_token)
 		});
-		promise = promise.then(response => {
-			if (this.isMounted()) {
-				this.setState({
-					playlists: response.items,
-					playlistCount: response.total,
-					nextURL: response.next,
-					prevURL: response.previous
-				});
+		promise.then(response => {
+				this.setState({ playlists: response.items, playlistCount: response.total, nextURL: response.next,
+					prevURL: response.previous });
 
-				document.getElementById('playlists').style.display = 'block';
-				document.getElementById('subtitle').textContent = (response.offset + 1) + '-' +
+				playlists.style.display = 'block';
+				subtitle.textContent = (response.offset + 1) + '-' +
 					(response.offset + response.items.length) + ' of ' + response.total + ' playlists\n';
-				document.getElementById('instr').textContent = "The script is rate limited to 10 API calls per second, "
-					+ "so for large playlists it takes a while to run. Just click once and wait."
-			}
-		});
-	},
+				instr.textContent = "The script is rate limited to 10 API calls per second, so for large playlists it takes a "
+					+ "few minutes to run. Just click once and wait."
+			});
+	}
 
 	exportPlaylists() {
 		ZipExporter.export(this.props.access_token, this.state.playlists);
-	},
-
-	// This is the power of React. You get to use this "JSX Syntax" to define and configure html really easily.
-	// {} are escape characters that demarcate javascript that needs to be evaluated to complete the html.
-	// This is much like Jekyll's Liquid preprocessing engine.
-	render() {
-		return (
-			<div id="playlists">
-				<Paginator nextURL={this.state.nextURL} prevURL={this.state.prevURL} loadPlaylists={this.loadPlaylists}/>
-				<table className="table table-hover">
-					<thead>
-						<tr>
-							<th style={{width: "30px"}}></th>
-							<th>Name</th>
-							<th style={{width: "150px"}}>Owner</th>
-							<th style={{width: "100px"}}>Tracks</th>
-							<th style={{width: "120px"}}>Public?</th>
-							<th style={{width: "120px"}}>Collaborative?</th>
-							<th style={{width: "100px"}} className="text-right">
-							<button className="btn btn-default btn-xs" type="submit" onClick={this.exportPlaylists}>
-							<span className="fa fa-file-archive-o"></span> Export All</button></th>
-						</tr>
-					</thead>
-					<tbody>
-						{this.state.playlists.map((playlist, i) => {
-							return <PlaylistRow playlist={playlist} access_token={this.props.access_token}/>;
-						})}
-					</tbody>
-				</table>
-				<Paginator nextURL={this.state.nextURL} prevURL={this.state.prevURL} loadPlaylists={this.loadPlaylists}/>
-			</div>
-		);
 	}
-});
+
+	// There used to be JSX syntax in here, but JSX was abandoned by the React community because Babel does it better.
+	// Around the web there seems to be a movement to not use this syntax if possible, because it means you literally
+	// have to pass this .js file through a transformer to get pure JavaScript, which slows down page loading significantly.
+	render() {
+		return React.createElement("div", { id: "playlists" },
+			React.createElement(Paginator, { nextURL: this.state.nextURL, prevURL: this.state.prevURL,
+																			loadPlaylists: this.loadPlaylists }),
+			React.createElement("table", { className: "table table-hover" },
+				React.createElement("thead", null,
+					React.createElement("tr", null,
+						React.createElement("th", { style: { width: "30px" }}),
+						React.createElement("th", null, "Name"),
+						React.createElement("th", { style: { width: "150px" } }, "Owner"),
+						React.createElement("th", { style: { width: "100px" } }, "Tracks"),
+						React.createElement("th", { style: { width: "120px" } }, "Public?"),
+						React.createElement("th", { style: { width: "120px" } }, "Collaborative?"),
+						React.createElement("th", { style: { width: "100px" }, className: "text-right"},
+							React.createElement("button", { className: "btn btn-default btn-xs", type: "submit", onClick: this.exportPlaylists.bind(this) },
+								React.createElement("i", { className: "fa fa-file-archive-o"}), " Export All")))),
+				React.createElement("tbody", null, this.state.playlists.map((playlist, i) => {
+					return React.createElement(PlaylistRow, { playlist: playlist, access_token: this.props.access_token, row: i});
+				}))),
+			React.createElement(Paginator, { nextURL: this.state.nextURL, prevURL: this.state.prevURL,
+																			loadPlaylists: this.loadPlaylists }));
+		}
+}
 
 // Separated out for convenience, I guess. The table's render method defines a bunch of these in a loop, which I'm
 // guessing implicitly calls this thing's render method. 
-let PlaylistRow = React.createClass({
-	exportPlaylist() { // this is the function that gets called when an export button is pressed
-		PlaylistExporter.export(this.props.access_token, this.props.playlist);
-	},
+class PlaylistRow extends React.Component {
+ 	exportPlaylist() { // this is the function that gets called when an export button is pressed
+		PlaylistExporter.export(this.props.access_token, this.props.playlist, this.props.row);
+	}
 
 	renderTickCross(dark) {
 		if (dark) {
-			return <i className="fa fa-lg fa-check-circle-o"></i>
+			return React.createElement("i", { className: "fa fa-lg fa-check-circle-o" });
 		} else {
-			return <i className="fa fa-lg fa-times-circle-o" style={{color: '#ECEBE8'}}></i>
+			return React.createElement("i", { className: "fa fa-lg fa-times-circle-o", style: { color: '#ECEBE8' } });
 		}
-	},
+	}
 
 	renderIcon(playlist) {
-		return <i className="fa fa-music"></i>;
-	},
+		return React.createElement("i", { className: "fa fa-music" });
+	}
 
 	render() {
-		p = this.props.playlist
-		return ( // actual html for one row of the table
-			<tr key={p.id}>
-				<td>{this.renderIcon(p)}</td>
-				<td><a href={p.external_urls.spotify}>{p.name}</a></td>
-				<td><a href={p.owner.external_urls.spotify}>{p.owner.id}</a></td>
-				<td>{p.tracks.total}</td>
-				<td>{this.renderTickCross(p.public)}</td>
-				<td>{this.renderTickCross(p.collaborative)}</td>
-				<td className="text-right"><button className="btn btn-default btn-xs btn-success" type="submit"
-					onClick={this.exportPlaylist}><span className="glyphicon glyphicon-save"></span> Export</button></td>
-			</tr>
-		);
+		let p = this.props.playlist
+		return React.createElement("tr", { key: p.id },
+			React.createElement("td", null, this.renderIcon(p)),
+				React.createElement("td", null,
+					React.createElement("a", { href: p.external_urls.spotify }, p.name)),
+				React.createElement("td", null,
+					React.createElement("a", { href: p.owner.external_urls.spotify }, p.owner.id)),
+				React.createElement("td", null, p.tracks.total),
+				React.createElement("td", null, this.renderTickCross(p.public)),
+				React.createElement("td", null, this.renderTickCross(p.collaborative)),
+				React.createElement("td", { className: "text-right" },
+					React.createElement("button", { className: "btn btn-default btn-xs btn-success", type: "submit",
+  																				id: "export" + this.props.row, onClick: this.exportPlaylist.bind(this) },
+						React.createElement("i", { className: "fa fa-download" }), " Export")));
 	}
-});
+}
 
 // For those users with a lot more playlists than necessary
-let Paginator = React.createClass({
+class Paginator extends React.Component {
 	nextClick(e) {
 		e.preventDefault()
 		if (this.props.nextURL != null) { this.props.loadPlaylists(this.props.nextURL); }
-	},
+		print("next", null);
+	}
 
 	prevClick(e) {
 		e.preventDefault()
 		if (this.props.prevURL != null) { this.props.loadPlaylists(this.props.prevURL); }
-	},
+		print("prev", null);
+	}
 
 	render() {
-		if (!this.props.nextURL && !this.props.prevURL) { return <div>&nbsp;</div> }
-		else { return (
-				<nav className="paginator text-right">
-					<ul className="pagination pagination-sm">
-						<li className={this.props.prevURL == null ? 'disabled' : ''}>
-							<a href="#" aria-label="Previous" onClick={this.prevClick}>
-								<span aria-hidden="true">&laquo;</span>
-							</a>
-						</li>
-						<li className={this.props.nextURL == null ? 'disabled' : ''}>
-							<a href="#" aria-label="Next" onClick={this.nextClick}>
-								<span aria-hidden="true">&raquo;</span>
-							</a>
-						</li>
-					</ul>
-				</nav>
-			); }
-	}
-});
+		if (!this.props.nextURL && !this.props.prevURL) { return React.createElement("div", null, "\xA0"); }
+		else { return React.createElement("nav", { className: "paginator text-right" },
+			React.createElement("ul", { className: "pagination pagination-sm" },
+				React.createElement("li", { className: this.props.prevURL == null ? 'disabled' : '' },
+					React.createElement("a", { href: "#", "aria-label": "Previous", onClick: this.prevClick.bind(this) },
+						React.createElement("span", { "aria-hidden": "true" }, "\xAB"))),
+				React.createElement("li", { className: this.props.nextURL == null ? 'disabled' : '' },
+					React.createElement("a", { href: "#", "aria-label": "Next", onClick: this.nextClick.bind(this) },
+						React.createElement("span", { "aria-hidden": "true" }, "\xBB")))));
+		}
+	};
+}
 
 // Handles exporting all playlist data as a zip file
 let ZipExporter = {
@@ -201,10 +183,12 @@ let ZipExporter = {
 let PlaylistExporter = {
 	// Take the access token string and playlist object, generate a csv from it, and when that data is resolved and
 	// returned save to a file.
-	export(access_token, playlist) {
+	export(access_token, playlist, row) {
+		document.getElementById("export"+row).innerHTML = '<i class="fa fa-circle-o-notch fa-spin"></i> Exporting';
 		let promise = this.csvData(access_token, playlist);
 		let fileName = this.fileName(playlist);
-		promise.then(data => { saveAs(new Blob(["\uFEFF" + data], { type: "text/csv;charset=utf-8" }), fileName) });
+		promise.then(data => { document.getElementById("export"+row).innerHTML = '<i class="fa fa-download"></i> Export';
+			saveAs(new Blob(["\uFEFF" + data], { type: "text/csv;charset=utf-8" }), fileName) });
 	},
 
 	// This is where the magic happens. The access token gives us permission to query this info from Spotify, and the
@@ -268,21 +252,21 @@ let PlaylistExporter = {
 	}
 }
 
-// All this bare code runs when the page loads.
-let [root, hash] = window.location.href.split('#')
-dict = {}
-if (hash) {
-	let params = hash.split('&');
-	for (let i = 0; i < params.length; i++) {
-		let [k, v] = params[i].split('=');
-		dict[k] = v;
+// runs when the page loads
+window.onload = () => {
+	let [root, hash] = window.location.href.split('#');
+	dict = {};
+	if (hash) {
+		let params = hash.split('&');
+		for (let i = 0; i < params.length; i++) {
+			let [k, v] = params[i].split('=');
+			dict[k] = v;
+		}
 	}
-}
 
-if (!dict.access_token) { // if we're on the home page
-	document.getElementById('loginButton').style.display = 'inline-block';
-} else { // if we were just authorized and got a token
-	// variable={value} makes that variable accessible to all React components via this.props.variable!
-	React.render(<PlaylistTable access_token={dict.access_token} />, playlistsContainer);
-	window.location = root + "#playlists"
+	if (dict.access_token) { // if we were just authorized and got a token
+		loginButton.style.display = 'none';
+		ReactDOM.render(React.createElement(PlaylistTable, { access_token: dict.access_token }), playlistsContainer);
+		window.location = root + "#playlists"
+	}
 }

@@ -4,12 +4,10 @@
 }
 
 #loginButton {
-  display: none;
   margin-top: 20px;
 }
 
 #rateLimitMessage {
-  display: none;
   text-align: center;
 }
 
