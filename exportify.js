@@ -38,9 +38,9 @@ class PlaylistTable extends React.Component {
 	// By default the constructor passes props to super. If you want some additional stuff, you have to override.
 	// https://stackoverflow.com/questions/30668326/what-is-the-difference-between-using-constructor-vs-getinitialstate-in-react-r
 	constructor(props) {
-    super(props);
-    this.state = { playlists: [], playlistCount: 0, nextURL: null, prevURL: null };
-  }
+		super(props);
+		this.state = { playlists: [], playlistCount: 0, nextURL: null, prevURL: null };
+	}
 
 	// "componentDidMount() is invoked immediately after a component is mounted (inserted into the tree).
 	// Initialization that requires DOM nodes should go here."
@@ -131,7 +131,7 @@ class PlaylistRow extends React.Component {
 				React.createElement("td", null, this.renderTickCross(p.collaborative)),
 				React.createElement("td", { className: "text-right" },
 					React.createElement("button", { className: "btn btn-default btn-xs btn-success", type: "submit",
-  																				id: "export" + this.props.row, onClick: this.exportPlaylist.bind(this) },
+																					id: "export" + this.props.row, onClick: this.exportPlaylist.bind(this) },
 						React.createElement("i", { className: "fa fa-download" }), " Export")));
 	}
 }
@@ -221,9 +221,9 @@ let PlaylistExporter = {
 		let genre_promise = data_promise.then(() => {
 			let artists_promises = Array.from(artist_hrefs).map((href, i) => utils.apiCall(href, access_token, 100*i));
 			return Promise.all(artists_promises).then(responses => {
-			  let artist_genres = {};
-			  responses.forEach(artist => { artist_genres[artist.name] = artist.genres.join(','); });
-			  return artist_genres;
+				let artist_genres = {};
+				responses.forEach(artist => { artist_genres[artist.name] = artist.genres.join(','); });
+				return artist_genres;
 			});
 		});
 
