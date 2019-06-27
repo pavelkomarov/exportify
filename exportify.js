@@ -1,5 +1,5 @@
-function print(label, obj) {
-	console.log(label + JSON.stringify(obj, null, 2))
+function print(label, obj="") {
+	console.log(JSON.stringify(label, null, 2) + JSON.stringify(obj, null, 2))
 }
 
 error = '<p><i class="fa fa-bolt" style="font-size: 50px; margin-bottom: 20px"></i></p><p>Exportify has encountered a <a target="_blank" href="https://developer.spotify.com/web-api/user-guide/#rate-limiting">rate limiting</a> error. Because I am interested in genre information, and genre lives in the artist JSON, I have to make server queries not only for the list of playlists and chunks of (100 at a time) songs from those lists, but also one call for each artist. If your music tastes are as variable as mine or you are trying to export too much at once, then the script will hit the ceiling pretty fast. But! the browser is actually caching those packets, so if you rerun the script (wait a minute and click the button again) a few times, it keeps filling in its missing pieces until it succeeds. Open developer tools with <tt>ctrl+shift+E</tt> and watch under the network tab to see this in action. Good luck.</p>';
@@ -63,8 +63,8 @@ class PlaylistTable extends React.Component {
 				playlists.style.display = 'block';
 				subtitle.textContent = (response.offset + 1) + '-' +
 					(response.offset + response.items.length) + ' of ' + response.total + ' playlists\n';
-				instr.textContent = "The script is rate limited to 10 API calls per second, so for large playlists it takes a "
-					+ "few minutes to run. Just click once and wait."
+				instr.textContent = "The script is rate limited to 10 API calls per second, so for large playlists it might "
+					+ "take a minute."
 			});
 	}
 
@@ -200,48 +200,71 @@ let PlaylistExporter = {
 			requests.push(utils.apiCall(playlist.tracks.href.split('?')[0] + '?offset=' + offset + '&limit=100',
 					access_token, offset));
 		}
-	
 		// "returns a single Promise that resolves when all of the promises passed as an iterable have resolved"
 		// https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Promise/all
-		let artist_hrefs = new Set();
-		let data_promise = Promise.all(requests).then(responses => {
+		let artist_ids = new Set();
+		let data_promise = Promise.all(requests).then(responses => { // Gather all the data from the responses in a table.
 			return responses.map(response => { // apply to all responses
 				return response.items.map(song => { // appy to all songs in each response
-					song.track.artists.forEach(a => { artist_hrefs.add(a.href) });
-					return [song.track.uri, '"'+song.track.name.replace(/"/g,'')+'"', '"'+song.track.album.name.replace(/"/g,'')+'"',
-						song.track.duration_ms, song.track.popularity, song.track.album.release_date,
-						'"'+song.track.artists.map(artist => { return artist.name }).join(',')+'"',
-						song.added_by.uri, song.added_at]
+					song.track.artists.forEach(a => { artist_ids.add(a.id) });
+					return [song.track.id, '"'+song.track.name.replace(/"/g,'')+'"', '"'+song.track.album.name.replace(/"/g,'')+'"',
+						'"'+song.track.artists.map(artist => { return artist.name }).join(',')+'"', song.track.album.release_date,
+						song.track.duration_ms, song.track.popularity, song.added_by.uri, song.added_at];
 				});
 			});
 		});
 
 		// Make queries on all the artists, because this json is where genre information lives. Unfortunately this
-		// means a second wave of traffic.
+		// means a second wave of traffic, 50 artists at a time the maximum allowed.
 		let genre_promise = data_promise.then(() => {
-			let artists_promises = Array.from(artist_hrefs).map((href, i) => utils.apiCall(href, access_token, 100*i));
+			artist_ids = Array.from(artist_ids); // Make groups of 50 artists, to all be queried together
+			artist_chunks = []; while (artist_ids.length) { artist_chunks.push(artist_ids.splice(0, 50)); };
+			let artists_promises = artist_chunks.map((chunk_ids, i) => utils.apiCall(
+				'https://api.spotify.com/v1/artists?ids='+chunk_ids.join(','), access_token, 100*i));
 			return Promise.all(artists_promises).then(responses => {
 				let artist_genres = {};
-				responses.forEach(artist => { artist_genres[artist.name] = artist.genres.join(','); });
+				responses.forEach(response => response.artists.forEach(
+					artist => artist_genres[artist.name] = artist.genres.join(',')));
 				return artist_genres;
 			});
 		});
 
-		// join genres to the table, label the columns, and put all data in a single csv string
-		return Promise.all([data_promise, genre_promise]).then(values => {
-			[data, artist_genres] = values;
+		// Make queries for song audio features, 100 songs at a time. Depends on genre_promise too to build in delays.
+		let features_promise = Promise.all([data_promise, genre_promise]).then(values => {
+			data = values[0];
+			let songs_promises = data.map((chunk, i) => { // remember data is an array of arrays, each subarray 100 tracks
+				ids = chunk.map(song => song[0]).join(','); // the id lives in the first position
+				return utils.apiCall('https://api.spotify.com/v1/audio-features?ids='+ids , access_token, 100*i);
+			});
+			//let keys_key = {0:'C', 1:'C#', 2:'D', 3:'D#'
+			return Promise.all(songs_promises).then(responses => {
+				return responses.map(response => { // for each response
+					return response.audio_features.map(feats => [feats.danceability, feats.energy, feats.key, feats.loudness,
+						feats.mode, feats.speechiness, feats.acousticness, feats.instrumentalness, feats.liveness,
+						feats.valence, feats.tempo, feats.time_signature]);
+				});
+			});
+		});
 
+		// join the tables, label the columns, and put all data in a single csv string
+		return Promise.all([data_promise, genre_promise, features_promise]).then(values => {
+			[data, artist_genres, features] = values;
+			// add genres
 			data = data.flat();
 			data.forEach(row => {
-				artists = row[6].substring(1, row[6].length-1).split(','); // strip the quotes
+				artists = row[3].substring(1, row[3].length-1).split(','); // strip the quotes
 				deduplicated_genres = new Set(artists.map(a => artist_genres[a]).join(",").split(",")); // in case multiple artists
 				row.push('"'+Array.from(deduplicated_genres).filter(x => x != "").join(",")+'"'); // remove empty strings
 			});
-			data.unshift(["Spotify URI", "Track Name", "Album Name", "Duration (ms)",
-				"Popularity", "Release Date", "Artist Name(s)", "Added By", "Added At", "Genres"]);
-
-			csv = '';
-			data.forEach(row => { csv += row.join(",") + "\n" });
+			// add features
+			features = features.flat();
+			data.forEach((row, i) => features[i].forEach(feat => row.push(feat)));
+			// add titles
+			data.unshift(["Spotify ID", "Track Name", "Album Name", "Artist Name(s)", "Release Date", "Duration (ms)",
+				"Popularity", "Added By", "Added At", "Genres", "Danceability", "Energy", "Key", "Loudness", "Mode",
+				"Speechiness", "Acousticness", "Instrumentalness", "Liveness", "Valence", "Tempo", "Time Signature"]);
+			// make a string
+			csv = ''; data.forEach(row => { csv += row.join(",") + "\n" });
 			return csv;
 		});
 	},
