@@ -207,7 +207,8 @@ let PlaylistExporter = {
 			return responses.map(response => { // apply to all responses
 				return response.items.map(song => { // appy to all songs in each response
 					song.track.artists.forEach(a => { artist_ids.add(a.id) });
-					return [song.track.id, '"'+song.track.name.replace(/"/g,'')+'"', '"'+song.track.album.name.replace(/"/g,'')+'"',
+					return [song.track.id, '"'+song.track.artists.map(artist => { return artist.id }).join(',')+'"',
+						'"'+song.track.name.replace(/"/g,'')+'"', '"'+song.track.album.name.replace(/"/g,'')+'"',
 						'"'+song.track.artists.map(artist => { return artist.name }).join(',')+'"', song.track.album.release_date,
 						song.track.duration_ms, song.track.popularity, song.added_by.uri, song.added_at];
 				});
@@ -224,7 +225,7 @@ let PlaylistExporter = {
 			return Promise.all(artists_promises).then(responses => {
 				let artist_genres = {};
 				responses.forEach(response => response.artists.forEach(
-					artist => artist_genres[artist.name] = artist.genres.join(',')));
+					artist => artist_genres[artist.id] = artist.genres.join(',')));
 				return artist_genres;
 			});
 		});
@@ -252,7 +253,7 @@ let PlaylistExporter = {
 			// add genres
 			data = data.flat();
 			data.forEach(row => {
-				artists = row[3].substring(1, row[3].length-1).split(','); // strip the quotes
+				artists = row[1].substring(1, row[1].length-1).split(','); // strip the quotes
 				deduplicated_genres = new Set(artists.map(a => artist_genres[a]).join(",").split(",")); // in case multiple artists
 				row.push('"'+Array.from(deduplicated_genres).filter(x => x != "").join(",")+'"'); // remove empty strings
 			});
@@ -260,9 +261,9 @@ let PlaylistExporter = {
 			features = features.flat();
 			data.forEach((row, i) => features[i].forEach(feat => row.push(feat)));
 			// add titles
-			data.unshift(["Spotify ID", "Track Name", "Album Name", "Artist Name(s)", "Release Date", "Duration (ms)",
-				"Popularity", "Added By", "Added At", "Genres", "Danceability", "Energy", "Key", "Loudness", "Mode",
-				"Speechiness", "Acousticness", "Instrumentalness", "Liveness", "Valence", "Tempo", "Time Signature"]);
+			data.unshift(["Spotify ID", "Artist IDs", "Track Name", "Album Name", "Artist Name(s)", "Release Date",
+				"Duration (ms)", "Popularity", "Added By", "Added At", "Genres", "Danceability", "Energy", "Key", "Loudness",
+				"Mode", "Speechiness", "Acousticness", "Instrumentalness", "Liveness", "Valence", "Tempo", "Time Signature"]);
 			// make a string
 			csv = ''; data.forEach(row => { csv += row.join(",") + "\n" });
 			return csv;
