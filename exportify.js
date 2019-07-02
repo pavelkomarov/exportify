@@ -45,17 +45,15 @@ class PlaylistTable extends React.Component {
 	// "componentDidMount() is invoked immediately after a component is mounted (inserted into the tree).
 	// Initialization that requires DOM nodes should go here."
 	componentDidMount() {
-		this.loadPlaylists(this.props.url);
-	} 
+		let user_promise = utils.apiCall("https://api.spotify.com/v1/me", this.props.access_token);
+		user_promise.then(user => this.loadPlaylists("https://api.spotify.com/v1/users/" + user.id + "/playlists"));
+	}
 
 	// Retrieve and display the list of user playlists. There are three steps: (1) retrieve data about the user,
 	// (2) wait for it to come back, then use it to ask for the list of playlists, (3) wait for that to come back,
 	// then parse that information out in to the React table.
 	loadPlaylists(url) {
-		let promise = utils.apiCall("https://api.spotify.com/v1/me", this.props.access_token);
-		promise = promise.then(data => {
-			return utils.apiCall("https://api.spotify.com/v1/users/" + data.id + "/playlists", this.props.access_token)
-		});
+		let promise = utils.apiCall(url, this.props.access_token);
 		promise.then(response => {
 				this.setState({ playlists: response.items, playlistCount: response.total, nextURL: response.next,
 					prevURL: response.previous });
@@ -78,7 +76,7 @@ class PlaylistTable extends React.Component {
 	render() {
 		return React.createElement("div", { id: "playlists" },
 			React.createElement(Paginator, { nextURL: this.state.nextURL, prevURL: this.state.prevURL,
-																			loadPlaylists: this.loadPlaylists }),
+																	loadPlaylists: this.loadPlaylists.bind(this) }),
 			React.createElement("table", { className: "table table-hover" },
 				React.createElement("thead", null,
 					React.createElement("tr", null,
@@ -96,7 +94,7 @@ class PlaylistTable extends React.Component {
 					return React.createElement(PlaylistRow, { playlist: playlist, access_token: this.props.access_token, row: i});
 				}))),
 			React.createElement(Paginator, { nextURL: this.state.nextURL, prevURL: this.state.prevURL,
-																			loadPlaylists: this.loadPlaylists }));
+																	loadPlaylists: this.loadPlaylists.bind(this) }));
 		}
 }
 
@@ -140,15 +138,13 @@ class PlaylistRow extends React.Component {
 // For those users with a lot more playlists than necessary
 class Paginator extends React.Component {
 	nextClick(e) {
-		e.preventDefault()
+		e.preventDefault(); // keep React from putting us at # instead of #playlists
 		if (this.props.nextURL != null) { this.props.loadPlaylists(this.props.nextURL); }
-		print("next", null);
 	}
 
 	prevClick(e) {
-		e.preventDefault()
+		e.preventDefault();
 		if (this.props.prevURL != null) { this.props.loadPlaylists(this.props.prevURL); }
-		print("prev", null);
 	}
 
 	render() {
