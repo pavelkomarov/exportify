@@ -2,7 +2,7 @@ function print(label, obj="") {
 	console.log(JSON.stringify(label, null, 2) + JSON.stringify(obj, null, 2))
 }
 
-error = '<p><i class="fa fa-bolt" style="font-size: 50px; margin-bottom: 20px"></i></p><p>Exportify has encountered a <a target="_blank" href="https://developer.spotify.com/web-api/user-guide/#rate-limiting">rate limiting</a> error. Because I am interested in genre information, and genre lives in the artist JSON, I have to make server queries not only for the list of playlists and chunks of (100 at a time) songs from those lists, but also one call for each artist. If your music tastes are as variable as mine or you are trying to export too much at once, then the script will hit the ceiling pretty fast. But! the browser is actually caching those packets, so if you rerun the script (wait a minute and click the button again) a few times, it keeps filling in its missing pieces until it succeeds. Open developer tools with <tt>ctrl+shift+E</tt> and watch under the network tab to see this in action. Good luck.</p>';
+error = '<p><i class="fa fa-bolt" style="font-size: 50px; margin-bottom: 20px"></i></p><p>Exportify has encountered a <a target="_blank" href="https://developer.spotify.com/web-api/user-guide/#rate-limiting">rate limiting</a> error. The browser is actually caching those packets, so if you rerun the script (wait a minute and click the button again) a few times, it keeps filling in its missing pieces until it succeeds. Open developer tools with <tt>ctrl+shift+E</tt> and watch under the network tab to see this in action. Good luck.</p>';
 
 // A collection of functions to create and send API queries
 utils = {
