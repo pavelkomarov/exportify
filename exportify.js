@@ -28,7 +28,7 @@ utils = {
 			if (response.ok) { return response.json();}
 			else if (response.status == 401) { window.location = window.location.href.split('#')[0]; } // Return to home page after auth token expiry
 			else if (response.status == 429) { rateLimitMessage.innerHTML = error; } // API Rate-limiting encountered
-			else { alert(response.status); }
+			else { alert("The server returned an HTTP " + response.status + " response."); }
 		});
 	}
 }
@@ -89,7 +89,8 @@ class PlaylistTable extends React.Component {
 						React.createElement("th", { style: { width: "120px" } }, "Public?"),
 						React.createElement("th", { style: { width: "120px" } }, "Collaborative?"),
 						React.createElement("th", { style: { width: "100px" }, className: "text-right"},
-							React.createElement("button", { className: "btn btn-default btn-xs", type: "submit", onClick: this.exportPlaylists.bind(this) },
+							React.createElement("button", { className: "btn btn-default btn-xs", type: "submit", id: "exportAll",
+								onClick: this.exportPlaylists.bind(this) },
 								React.createElement("i", { className: "fa fa-file-archive-o"}), " Export All")))),
 				React.createElement("tbody", null, this.state.playlists.map((playlist, i) => {
 					return React.createElement(PlaylistRow, { playlist: playlist, access_token: this.props.access_token, row: i});
@@ -166,16 +167,16 @@ class Paginator extends React.Component {
 
 // Handles exporting all playlist data as a zip file
 let ZipExporter = {
-	export(access_token, playlists) {
-		let csv_promises = playlists.map(playlist => PlaylistExporter.csvData(access_token, playlist));
-		let fileNames = playlists.map(playlist => PlaylistExporter.fileName(playlist));
-
-		Promise.all(csv_promises).then(csvs => {
-			let zip = new JSZip();
-			csvs.forEach((csv, i) => { zip.file(fileNames[i], csv); });
-			let content = zip.generate({ type: "blob" });
-			saveAs(content, "spotify_playlists.zip");
-		});
+	async export(access_token, playlists) {
+		document.getElementById("exportAll").innerHTML = '<i class="fa fa-circle-o-notch fa-spin"></i> Exporting';
+		let zip = new JSZip();
+		for (let playlist of playlists) {
+			let csv = await PlaylistExporter.csvData(access_token, playlist);
+			zip.file(PlaylistExporter.fileName(playlist), csv);
+		}
+		let content = zip.generate({ type: "blob" });
+		document.getElementById("exportAll").innerHTML = '<i class="fa fa-file-archive-o"></i> Export All';
+		saveAs(content, "spotify_playlists.zip");
 	}
 }
 
@@ -206,7 +207,7 @@ let PlaylistExporter = {
 		let data_promise = Promise.all(requests).then(responses => { // Gather all the data from the responses in a table.
 			return responses.map(response => { // apply to all responses
 				return response.items.map(song => { // appy to all songs in each response
-					song.track.artists.forEach(a => { artist_ids.add(a.id) });
+					song.track.artists.forEach(a => { if(a.id) { artist_ids.add(a.id) } });
 					return [song.track.id, '"'+song.track.artists.map(artist => { return artist.id }).join(',')+'"',
 						'"'+song.track.name.replace(/"/g,'')+'"', '"'+song.track.album.name.replace(/"/g,'')+'"',
 						'"'+song.track.artists.map(artist => { return artist.name }).join(',')+'"', song.track.album.release_date,
@@ -237,12 +238,13 @@ let PlaylistExporter = {
 				ids = chunk.map(song => song[0]).join(','); // the id lives in the first position
 				return utils.apiCall('https://api.spotify.com/v1/audio-features?ids='+ids , access_token, 100*i);
 			});
-			//let keys_key = {0:'C', 1:'C#', 2:'D', 3:'D#'
 			return Promise.all(songs_promises).then(responses => {
 				return responses.map(response => { // for each response
-					return response.audio_features.map(feats => [feats.danceability, feats.energy, feats.key, feats.loudness,
-						feats.mode, feats.speechiness, feats.acousticness, feats.instrumentalness, feats.liveness,
-						feats.valence, feats.tempo, feats.time_signature]);
+					return response.audio_features.map(feats => {
+						return feats ? [feats.danceability, feats.energy, feats.key, feats.loudness,	feats.mode,
+							feats.speechiness, feats.acousticness, feats.instrumentalness, feats.liveness, feats.valence,
+							feats.tempo, feats.time_signature] : Array(12);
+					});
 				});
 			});
 		});
