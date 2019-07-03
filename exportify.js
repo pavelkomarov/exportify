@@ -95,7 +95,7 @@ class PlaylistTable extends React.Component {
 				}))),
 			React.createElement(Paginator, { nextURL: this.state.nextURL, prevURL: this.state.prevURL,
 																	loadPlaylists: this.loadPlaylists.bind(this) }));
-		}
+	}
 }
 
 // Separated out for convenience, I guess. The table's render method defines a bunch of these in a loop, which I'm
@@ -130,7 +130,7 @@ class PlaylistRow extends React.Component {
 				React.createElement("td", null, this.renderTickCross(p.collaborative)),
 				React.createElement("td", { className: "text-right" },
 					React.createElement("button", { className: "btn btn-default btn-xs btn-success", type: "submit",
-																					id: "export" + this.props.row, onClick: this.exportPlaylist.bind(this) },
+											id: "export" + this.props.row, onClick: this.exportPlaylist.bind(this) },
 						React.createElement("i", { className: "fa fa-download" }), " Export")));
 	}
 }
@@ -158,7 +158,7 @@ class Paginator extends React.Component {
 					React.createElement("a", { href: "#", "aria-label": "Next", onClick: this.nextClick.bind(this) },
 						React.createElement("span", { "aria-hidden": "true" }, "\xBB")))));
 		}
-	};
+	}
 }
 
 // Handles exporting all playlist data as a zip file
