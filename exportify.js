@@ -203,6 +203,8 @@ let PlaylistExporter = {
 		let data_promise = Promise.all(requests).then(responses => { // Gather all the data from the responses in a table.
 			return responses.map(response => { // apply to all responses
 				return response.items.map(song => { // appy to all songs in each response
+					if (song.track.name.startsWith("Walk Alone")) { print(song); }
+					//if (!song.track) { print(song); }
 					song.track.artists.forEach(a => { if(a.id) { artist_ids.add(a.id) } });
 					return [song.track.id, '"'+song.track.artists.map(artist => { return artist.id }).join(',')+'"',
 						'"'+song.track.name.replace(/"/g,'')+'"', '"'+song.track.album.name.replace(/"/g,'')+'"',
