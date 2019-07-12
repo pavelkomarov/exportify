@@ -33,11 +33,8 @@ utils = {
 	},
 
 	logout() {
-		var win = window.open('https://www.spotify.com/logout/','_blank');
-		setTimeout(function() { window.close(); }, 3000);
-		//setTimeout(() => { console.log("what"); logout.close(); console.log("hello"); }, 1000);
-		window.location = 'http://localhost:8000/app.html';
-		console.log('yo');
+		window.open('https://www.spotify.com/logout/','_blank'); // The only way to log out of Spotify is to go to this url.
+		window.location = [location.protocol, '//', location.host, location.pathname].join('');
 	}
 }
 
