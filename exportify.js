@@ -2,7 +2,7 @@ function print(label, obj="") {
 	console.log(JSON.stringify(label, null, 2) + JSON.stringify(obj, null, 2))
 }
 
-error = '<p><i class="fa fa-bolt" style="font-size: 50px; margin-bottom: 20px"></i></p><p>Exportify has encountered a <a target="_blank" href="https://developer.spotify.com/web-api/user-guide/#rate-limiting">rate limiting</a> error. The browser is actually caching those packets, so if you rerun the script (wait a minute and click the button again) a few times, it keeps filling in its missing pieces until it succeeds. Open developer tools with <tt>ctrl+shift+E</tt> and watch under the network tab to see this in action. Good luck.</p>';
+rateLimit = '<p><i class="fa fa-bolt" style="font-size: 50px; margin-bottom: 20px"></i></p><p>Exportify has encountered a <a target="_blank" href="https://developer.spotify.com/web-api/user-guide/#rate-limiting">rate limiting</a> error. The browser is actually caching those packets, so if you rerun the script (wait a minute and click the button again) a few times, it keeps filling in its missing pieces until it succeeds. Open developer tools with <tt>ctrl+shift+E</tt> and watch under the network tab to see this in action. Good luck.</p>';
 
 // A collection of functions to create and send API queries
 utils = {
@@ -27,8 +27,8 @@ utils = {
 		return promise.then(response => {
 			if (response.ok) { return response.json();}
 			else if (response.status == 401) { window.location = window.location.href.split('#')[0]; } // Return to home page after auth token expiry
-			else if (response.status == 429) { rateLimitMessage.innerHTML = error; } // API Rate-limiting encountered
-			else { alert("The server returned an HTTP " + response.status + " response."); }
+			else if (response.status == 429) { error.innerHTML = rateLimit; } // API Rate-limiting encountered
+			else { error.innerHTML = "The server returned an HTTP " + response.status + " response."; } // the caller will fail
 		});
 	}
 }
@@ -61,8 +61,6 @@ class PlaylistTable extends React.Component {
 				playlists.style.display = 'block';
 				subtitle.textContent = (response.offset + 1) + '-' +
 					(response.offset + response.items.length) + ' of ' + response.total + ' playlists\n';
-				instr.textContent = "The script is rate limited to 10 API calls per second, so for large playlists it might "
-					+ "take a minute."
 			});
 	}
 
@@ -87,9 +85,9 @@ class PlaylistTable extends React.Component {
 						React.createElement("th", { style: { width: "120px" } }, "Public?"),
 						React.createElement("th", { style: { width: "120px" } }, "Collaborative?"),
 						React.createElement("th", { style: { width: "100px" }, className: "text-right"},
-							React.createElement("button", { className: "btn btn-default btn-xs", type: "submit", id: "exportAll",
+							React.createElement("button", { className: "btn btn-default btn-xs", type: "submit", id: "exportGroup",
 								onClick: this.exportPlaylists.bind(this) },
-								React.createElement("i", { className: "fa fa-file-archive-o"}), " Export All")))),
+								React.createElement("i", { className: "fa fa-file-archive-o"}), " Export Group")))),
 				React.createElement("tbody", null, this.state.playlists.map((playlist, i) => {
 					return React.createElement(PlaylistRow, { playlist: playlist, access_token: this.props.access_token, row: i});
 				}))),
@@ -164,14 +162,20 @@ class Paginator extends React.Component {
 // Handles exporting all playlist data as a zip file
 let ZipExporter = {
 	async export(access_token, playlists) {
-		document.getElementById("exportAll").innerHTML = '<i class="fa fa-circle-o-notch fa-spin"></i> Exporting';
+		exportGroup.innerHTML = '<i class="fa fa-circle-o-notch fa-spin"></i> Exporting';
 		let zip = new JSZip();
 		for (let playlist of playlists) {
-			let csv = await PlaylistExporter.csvData(access_token, playlist);
-			zip.file(PlaylistExporter.fileName(playlist), csv);
+			try {
+				let csv = await PlaylistExporter.csvData(access_token, playlist);
+				zip.file(PlaylistExporter.fileName(playlist), csv);
+			} catch (e) {
+				error.innerHTML = "Couldn't export " + playlist.name + ". Encountered <tt>" + e +
+					'</tt>. Please <a href="https://github.com/pavelkomarov/exportify/issues/10">let us know</a>. ' +
+					"The others are still being zipped.";
+			}
 		}
 		let content = zip.generate({ type: "blob" });
-		document.getElementById("exportAll").innerHTML = '<i class="fa fa-file-archive-o"></i> Export All';
+		exportGroup.innerHTML= '<i class="fa fa-file-archive-o"></i> Export Group';
 		saveAs(content, "spotify_playlists.zip");
 	}
 }
@@ -180,12 +184,18 @@ let ZipExporter = {
 let PlaylistExporter = {
 	// Take the access token string and playlist object, generate a csv from it, and when that data is resolved and
 	// returned save to a file.
-	export(access_token, playlist, row) {
+	async export(access_token, playlist, row) {
 		document.getElementById("export"+row).innerHTML = '<i class="fa fa-circle-o-notch fa-spin"></i> Exporting';
-		let promise = this.csvData(access_token, playlist);
 		let fileName = this.fileName(playlist);
-		promise.then(data => { document.getElementById("export"+row).innerHTML = '<i class="fa fa-download"></i> Export';
-			saveAs(new Blob(["\uFEFF" + data], { type: "text/csv;charset=utf-8" }), fileName) });
+		try {
+			let csv = await this.csvData(access_token, playlist);
+			saveAs(new Blob(["\uFEFF" + csv], { type: "text/csv;charset=utf-8" }), fileName);
+		} catch (e) {
+			error.innerHTML = "Couldn't export " + playlist.name + ". Encountered <tt>" + e +
+					'</tt>. Please <a href="https://github.com/pavelkomarov/exportify/issues/10">let us know</a>.';
+		} finally {
+			document.getElementById("export"+row).innerHTML = '<i class="fa fa-download"></i> Export';
+		}
 	},
 
 	// This is where the magic happens. The access token gives us permission to query this info from Spotify, and the
@@ -203,8 +213,6 @@ let PlaylistExporter = {
 		let data_promise = Promise.all(requests).then(responses => { // Gather all the data from the responses in a table.
 			return responses.map(response => { // apply to all responses
 				return response.items.map(song => { // appy to all songs in each response
-					if (song.track.name.startsWith("Walk Alone")) { print(song); }
-					//if (!song.track) { print(song); }
 					song.track.artists.forEach(a => { if(a.id) { artist_ids.add(a.id) } });
 					return [song.track.id, '"'+song.track.artists.map(artist => { return artist.id }).join(',')+'"',
 						'"'+song.track.name.replace(/"/g,'')+'"', '"'+song.track.album.name.replace(/"/g,'')+'"',
