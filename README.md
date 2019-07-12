@@ -1,15 +1,11 @@
 [![Build Status](http://img.shields.io/travis/pavelkomarov/exportify.svg?style=flat)](https://travis-ci.org/pavelkomarov/exportify)
 [![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/pavelkomarov/exportify/master)
 
-This is a hard fork of [the original Exportify repo](https://github.com/watsonbox/exportify). I've simplified and updated the code, gotten rid of the failing tests, set up automatic deployment to github pages, fixed a parsing bug, enhanced the set of features, and added an ipython notebook to do something interesting with the data.
+This is a hard fork of [the original Exportify repo](https://github.com/watsonbox/exportify). I've simplified and updated the code, gotten rid of the outdated tests, set up automatic deployment to github pages, fixed a parsing bug, enhanced the set of features, added logout functionality, and provided an ipython notebook to do something interesting with the data.
 
 <a href="https://pavelkomarov.com/exportify/app"><img src="screenshot.png"/></a>
 
 Export your Spotify playlists for analysis or just safekeeping: [https://pavelkomarov.com/exportify/app](https://pavelkomarov.com/exportify/app)
-
-### Re-importing in Spotify
-
-Select and copy the `spotify:track:xxx` URIs, then simply create a playlist in Spotify and paste them in.
 
 ### Export Format
 
@@ -51,7 +47,8 @@ Run the [Jupyter Notebook](https://github.com/pavelkomarov/exportify/blob/master
 - Time signatures and keys
 - All songs plotted in 2D to indicate relative similarities
 
-## Development
+
+### Development
 
 Developers wishing to make changes to Exportify should use a local web server. For example, using Python (in the Exportify repo dir):
 
@@ -61,7 +58,7 @@ python -m http.server
 
 Then open [http://localhost:8000/app](http://localhost:8000/app).
 
-## Contributing
+### Contributing
 
 1. Fork it
 2. Create your feature branch (`git checkout -b my-new-feature`)
