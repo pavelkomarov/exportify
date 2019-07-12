@@ -33,8 +33,9 @@ utils = {
 	},
 
 	logout() {
-		window.open('https://www.spotify.com/logout/','_blank'); // The only way to log out of Spotify is to go to this url.
-		window.location = [location.protocol, '//', location.host, location.pathname].join('');
+		playlistsContainer.innerHTML = '<iframe src="https://www.spotify.com/logout/"></iframe>';
+		playlistsContainer.style.display = 'none';
+		setTimeout(() => window.location = [location.protocol, '//', location.host, location.pathname].join(''), 1000);
 	}
 }
 
