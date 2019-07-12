@@ -30,6 +30,14 @@ utils = {
 			else if (response.status == 429) { error.innerHTML = rateLimit; } // API Rate-limiting encountered
 			else { error.innerHTML = "The server returned an HTTP " + response.status + " response."; } // the caller will fail
 		});
+	},
+
+	logout() {
+		var win = window.open('https://www.spotify.com/logout/','_blank');
+		setTimeout(function() { window.close(); }, 3000);
+		//setTimeout(() => { console.log("what"); logout.close(); console.log("hello"); }, 1000);
+		window.location = 'http://localhost:8000/app.html';
+		console.log('yo');
 	}
 }
 
@@ -299,6 +307,7 @@ window.onload = () => {
 	if (dict.access_token) { // if we were just authorized and got a token
 		loginButton.style.display = 'none';
 		ReactDOM.render(React.createElement(PlaylistTable, { access_token: dict.access_token }), playlistsContainer);
+		logoutContainer.innerHTML = '<button id="logoutButton" class="btn btn-sm" onclick="utils.logout()">Log Out</button>';
 		window.location = root + "#playlists"
 	}
 }
