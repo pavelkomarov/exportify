@@ -188,10 +188,9 @@ let PlaylistExporter = {
 	// returned save to a file.
 	async export(access_token, playlist, row) {
 		document.getElementById("export"+row).innerHTML = '<i class="fa fa-circle-o-notch fa-spin"></i> Exporting';
-		let fileName = this.fileName(playlist);
 		try {
 			let csv = await this.csvData(access_token, playlist);
-			saveAs(new Blob(["\uFEFF" + csv], { type: "text/csv;charset=utf-8" }), fileName);
+			saveAs(new Blob(["\uFEFF" + csv], { type: "text/csv;charset=utf-8" }), this.fileName(playlist));
 		} catch (e) {
 			error.innerHTML = "Couldn't export " + playlist.name + ". Encountered <tt>" + e +
 					'</tt>. Please <a href="https://github.com/pavelkomarov/exportify/issues/10">let us know</a>.';
