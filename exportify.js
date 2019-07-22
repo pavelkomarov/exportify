@@ -41,33 +41,32 @@ class PlaylistTable extends React.Component {
 	// https://stackoverflow.com/questions/30668326/what-is-the-difference-between-using-constructor-vs-getinitialstate-in-react-r
 	constructor(props) {
 		super(props);
-		this.state = { playlists: [], playlistCount: 0, nextURL: null, prevURL: null };
+		this.state = { playlists: [], nplaylists: 0, nextURL: null, prevURL: null };
 	}
 
 	// "componentDidMount() is invoked immediately after a component is mounted (inserted into the tree).
 	// Initialization that requires DOM nodes should go here."
-	componentDidMount() {
-		let user_promise = utils.apiCall("https://api.spotify.com/v1/me", this.props.access_token);
-		user_promise.then(user => this.loadPlaylists("https://api.spotify.com/v1/users/" + user.id + "/playlists"));
+	async componentDidMount() {
+		let user = await utils.apiCall("https://api.spotify.com/v1/me", this.props.access_token);
+		this.loadPlaylists("https://api.spotify.com/v1/users/" + user.id + "/playlists");
+		this.state.userid = user.id;
 	}
 
 	// Retrieve and display the list of user playlists. There are three steps: (1) retrieve data about the user,
 	// (2) wait for it to come back, then use it to ask for the list of playlists, (3) wait for that to come back,
 	// then parse that information out in to the React table.
-	loadPlaylists(url) {
-		let promise = utils.apiCall(url, this.props.access_token);
-		promise.then(response => {
-				this.setState({ playlists: response.items, playlistCount: response.total, nextURL: response.next,
-					prevURL: response.previous });
+	async loadPlaylists(url) {
+		let response = await utils.apiCall(url, this.props.access_token);
+		this.setState({ playlists: response.items, nplaylists: response.total, nextURL: response.next,
+			prevURL: response.previous });
 
-				playlists.style.display = 'block';
-				subtitle.textContent = (response.offset + 1) + '-' +
-					(response.offset + response.items.length) + ' of ' + response.total + ' playlists\n';
-			});
+		playlists.style.display = 'block';
+		subtitle.textContent = (response.offset + 1) + '-' + (response.offset + response.items.length) +
+			' of ' + response.total + ' playlists\n';
 	}
 
 	exportPlaylists() {
-		ZipExporter.export(this.props.access_token, this.state.playlists);
+		ZipExporter.export(this.props.access_token, this.state.userid, this.state.nplaylists);
 	}
 
 	// There used to be JSX syntax in here, but JSX was abandoned by the React community because Babel does it better.
@@ -87,9 +86,9 @@ class PlaylistTable extends React.Component {
 						React.createElement("th", { style: { width: "120px" } }, "Public?"),
 						React.createElement("th", { style: { width: "120px" } }, "Collaborative?"),
 						React.createElement("th", { style: { width: "100px" }, className: "text-right"},
-							React.createElement("button", { className: "btn btn-default btn-xs", type: "submit", id: "exportGroup",
+							React.createElement("button", { className: "btn btn-default btn-xs", type: "submit", id: "exportAll",
 								onClick: this.exportPlaylists.bind(this) },
-								React.createElement("i", { className: "fa fa-file-archive-o"}), " Export Group")))),
+								React.createElement("i", { className: "fa fa-file-archive-o"}), " Export All")))),
 				React.createElement("tbody", null, this.state.playlists.map((playlist, i) => {
 					return React.createElement(PlaylistRow, { playlist: playlist, access_token: this.props.access_token, row: i});
 				}))),
@@ -163,9 +162,20 @@ class Paginator extends React.Component {
 
 // Handles exporting all playlist data as a zip file
 let ZipExporter = {
-	async export(access_token, playlists) {
-		exportGroup.innerHTML = '<i class="fa fa-circle-o-notch fa-spin"></i> Exporting';
+	async export(access_token, userid, nplaylists) {
+		exportAll.innerHTML = '<i class="fa fa-circle-o-notch fa-spin"></i> Exporting';
 		let zip = new JSZip();
+		
+		// Get a list of all the user's playlists
+		let playlists = [];
+		for (let offset = 0; offset < nplaylists; offset += 50) {
+			let batch = await utils.apiCall("https://api.spotify.com/v1/users/" + userid + "/playlists?limit=50&offset=" +
+				offset, access_token, offset*2); // only one query every 100 ms
+			playlists.push(batch.items);				
+		}
+		playlists = playlists.flat();
+		
+		// Now do the real work for each playlist
 		for (let playlist of playlists) {
 			try {
 				let csv = await PlaylistExporter.csvData(access_token, playlist);
@@ -177,7 +187,7 @@ let ZipExporter = {
 			}
 		}
 		let content = zip.generate({ type: "blob" });
-		exportGroup.innerHTML= '<i class="fa fa-file-archive-o"></i> Export Group';
+		exportAll.innerHTML= '<i class="fa fa-file-archive-o"></i> Export All';
 		saveAs(content, "spotify_playlists.zip");
 	}
 }
