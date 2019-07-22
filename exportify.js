@@ -19,13 +19,11 @@ utils = {
 	// https://developer.mozilla.org/en-US/docs/Web/API/Fetch_API/Using_Fetch
 	async apiCall(url, access_token, delay=0) {
 		await new Promise(r => setTimeout(r, delay)); // JavaScript equivalent of sleep(delay)
-		let promise = fetch(url, { headers: { 'Authorization': 'Bearer ' + access_token} });
-		return promise.then(response => {
-			if (response.ok) { return response.json();}
-			else if (response.status == 401) { window.location = window.location.href.split('#')[0]; } // Return to home page after auth token expiry
-			else if (response.status == 429) { error.innerHTML = rateLimit; } // API Rate-limiting encountered
-			else { error.innerHTML = "The server returned an HTTP " + response.status + " response."; } // the caller will fail
-		});
+		let response = await fetch(url, { headers: { 'Authorization': 'Bearer ' + access_token} });
+		if (response.ok) { return response.json(); }
+		else if (response.status == 401) { window.location = window.location.href.split('#')[0]; } // Return to home page after auth token expiry
+		else if (response.status == 429) { error.innerHTML = rateLimit; } // API Rate-limiting encountered
+		else { error.innerHTML = "The server returned an HTTP " + response.status + " response."; } // the caller will fail
 	},
 
 	logout() {
