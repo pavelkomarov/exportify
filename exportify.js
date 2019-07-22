@@ -93,7 +93,7 @@ class PlaylistTable extends React.Component {
 					return React.createElement(PlaylistRow, { playlist: playlist, access_token: this.props.access_token, row: i});
 				}))),
 			React.createElement(Paginator, { nextURL: this.state.nextURL, prevURL: this.state.prevURL,
-																	loadPlaylists: this.loadPlaylists.bind(this) }));
+														loadPlaylists: this.loadPlaylists.bind(this) }));
 	}
 }
 
