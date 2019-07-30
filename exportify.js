@@ -53,9 +53,7 @@ class PlaylistTable extends React.Component {
 		this.state.userid = user.id;
 	}
 
-	// Retrieve and display the list of user playlists. There are three steps: (1) retrieve data about the user,
-	// (2) wait for it to come back, then use it to ask for the list of playlists, (3) wait for that to come back,
-	// then parse that information out in to the React table.
+	// Retrieve the list of user playlists by querying the url and add them to this Component's state.
 	async loadPlaylists(url) {
 		let response = await utils.apiCall(url, this.props.access_token);
 		this.setState({ playlists: response.items, nplaylists: response.total, nextURL: response.next,
