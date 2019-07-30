@@ -111,14 +111,10 @@ class PlaylistRow extends React.Component {
 		}
 	}
 
-	renderIcon(playlist) {
-		return React.createElement("i", { className: "fa fa-music" });
-	}
-
 	render() {
 		let p = this.props.playlist
 		return React.createElement("tr", { key: p.id },
-			React.createElement("td", null, this.renderIcon(p)),
+			React.createElement("td", null, React.createElement("i", { className: "fa fa-music" })),
 				React.createElement("td", null,
 					React.createElement("a", { href: p.external_urls.spotify }, p.name)),
 				React.createElement("td", null,
