@@ -26,6 +26,9 @@ utils = {
 		else { error.innerHTML = "The server returned an HTTP " + response.status + " response."; } // the caller will fail
 	},
 
+	// Logging out of Spotify is much like logging in: You have to navigate to a certain url. But unlike logging in, there is
+	// no way to redirect back to my home page. So open the logout page in an invisible iframe, then redirect to the homepage
+	// after a second, which is almost always long enough for the logout request to go through.
 	logout() {
 		playlistsContainer.innerHTML = '<iframe src="https://www.spotify.com/logout/"></iframe>';
 		playlistsContainer.style.display = 'none';
