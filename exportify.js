@@ -176,6 +176,7 @@ let ZipExporter = {
 				let csv = await PlaylistExporter.csvData(access_token, playlist);
 				zip.file(PlaylistExporter.fileName(playlist), csv);
 			} catch (e) {
+				console.log(playlist.name + " failure caught. " + e);
 				error.innerHTML = "Couldn't export " + playlist.name + ". Encountered <tt>" + e +
 					'</tt>. Please <a href="https://github.com/pavelkomarov/exportify/issues/10">let us know</a>. ' +
 					"The others are still being zipped.";
