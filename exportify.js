@@ -166,9 +166,11 @@ let ZipExporter = {
 		for (let offset = 0; offset < nplaylists; offset += 50) {
 			let batch = await utils.apiCall("https://api.spotify.com/v1/users/" + userid + "/playlists?limit=50&offset=" +
 				offset, access_token, offset*2); // only one query every 100 ms
-			playlists.push(batch.items);				
+			playlists.push(batch.items);
 		}
 		playlists = playlists.flat();
+		console.log('nplaylists = ', nplaylists);
+		console.log('length of playlists list = ', playlists.length);
 		
 		// Now do the real work for each playlist
 		for (let playlist of playlists) {
