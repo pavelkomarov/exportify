@@ -185,9 +185,8 @@ let ZipExporter = {
 					"The others are still being zipped.";
 			}
 		}
-		let content = zip.generate({ type: "blob" });
 		exportAll.innerHTML= '<i class="fa fa-file-archive-o"></i> Export All';
-		saveAs(content, "spotify_playlists.zip");
+		saveAs(zip.generate({ type: "blob" }), "spotify_playlists.zip");
 	}
 }
 
