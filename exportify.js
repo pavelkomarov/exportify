@@ -159,6 +159,7 @@ class Paginator extends React.Component {
 let ZipExporter = {
 	async export(access_token, userid, nplaylists) {
 		exportAll.innerHTML = '<i class="fa fa-circle-o-notch fa-spin"></i> Exporting';
+		error.innerHTML = "";
 		let zip = new JSZip();
 		
 		// Get a list of all the user's playlists
@@ -169,18 +170,18 @@ let ZipExporter = {
 			playlists.push(batch.items);
 		}
 		playlists = playlists.flat();
-		console.log('nplaylists = ', nplaylists);
-		console.log('length of playlists list = ', playlists.length);
 		
 		// Now do the real work for each playlist
 		for (let playlist of playlists) {
 			try {
 				let csv = await PlaylistExporter.csvData(access_token, playlist);
-				zip.file(PlaylistExporter.fileName(playlist), csv);
-			} catch (e) {
-				console.log(playlist.name + " failure caught. " + e);
-				error.innerHTML = "Couldn't export " + playlist.name + ". Encountered <tt>" + e +
-					'</tt>. Please <a href="https://github.com/pavelkomarov/exportify/issues/10">let us know</a>. ' +
+				let fileName = PlaylistExporter.fileName(playlist);
+				while (zip.file(fileName + ".csv")) { fileName += "_"; } // so filenames are always unique and nothing is overwritten
+				zip.file(fileName + ".csv", csv);
+			} catch (e) { // Surface all errors
+				error.innerHTML = error.innerHTML.slice(0, -120) + "Couldn't export " + playlist.name + " with id " +
+					playlist.id + ". Encountered <tt>" + e + "</tt>.<br>" +
+					'Please <a href="https://github.com/pavelkomarov/exportify/issues/10">let us know</a>. ' +
 					"The others are still being zipped.";
 			}
 		}
@@ -198,7 +199,7 @@ let PlaylistExporter = {
 		document.getElementById("export"+row).innerHTML = '<i class="fa fa-circle-o-notch fa-spin"></i> Exporting';
 		try {
 			let csv = await this.csvData(access_token, playlist);
-			saveAs(new Blob(["\uFEFF" + csv], { type: "text/csv;charset=utf-8" }), this.fileName(playlist));
+			saveAs(new Blob(["\uFEFF" + csv], { type: "text/csv;charset=utf-8" }), this.fileName(playlist) + ".csv");
 		} catch (e) {
 			error.innerHTML = "Couldn't export " + playlist.name + ". Encountered <tt>" + e +
 					'</tt>. Please <a href="https://github.com/pavelkomarov/exportify/issues/10">let us know</a>.';
@@ -289,7 +290,7 @@ let PlaylistExporter = {
 
 	// take the playlist object and return an acceptable filename
 	fileName(playlist) {
-		return playlist.name.replace(/[^a-z0-9\- ]/gi, '').replace(/[ ]/gi, '_').toLowerCase() + ".csv";
+		return playlist.name.replace(/[^a-z0-9\- ]/gi, '').replace(/[ ]/gi, '_').toLowerCase();
 	}
 }
 
