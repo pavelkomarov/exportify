@@ -72,27 +72,31 @@ class PlaylistTable extends React.Component {
 	// Around the web there seems to be a movement to not use this syntax if possible, because it means you literally
 	// have to pass this .js file through a transformer to get pure JavaScript, which slows down page loading significantly.
 	render() {
-		return React.createElement("div", { id: "playlists" },
-			React.createElement(Paginator, { nextURL: this.state.nextURL, prevURL: this.state.prevURL,
-																	loadPlaylists: this.loadPlaylists.bind(this) }),
-			React.createElement("table", { className: "table table-hover" },
-				React.createElement("thead", null,
-					React.createElement("tr", null,
-						React.createElement("th", { style: { width: "30px" }}),
-						React.createElement("th", null, "Name"),
-						React.createElement("th", { style: { width: "150px" } }, "Owner"),
-						React.createElement("th", { style: { width: "100px" } }, "Tracks"),
-						React.createElement("th", { style: { width: "120px" } }, "Public?"),
-						React.createElement("th", { style: { width: "120px" } }, "Collaborative?"),
-						React.createElement("th", { style: { width: "100px" }, className: "text-right"},
-							React.createElement("button", { className: "btn btn-default btn-xs", type: "submit", id: "exportAll",
-								onClick: this.exportPlaylists.bind(this) },
-								React.createElement("i", { className: "fa fa-file-archive-o"}), " Export All")))),
-				React.createElement("tbody", null, this.state.playlists.map((playlist, i) => {
-					return React.createElement(PlaylistRow, { playlist: playlist, access_token: this.props.access_token, row: i});
-				}))),
-			React.createElement(Paginator, { nextURL: this.state.nextURL, prevURL: this.state.prevURL,
-														loadPlaylists: this.loadPlaylists.bind(this) }));
+		if (this.state.playlists.length > 0) {
+			return React.createElement("div", { id: "playlists" },
+				React.createElement(Paginator, { nextURL: this.state.nextURL, prevURL: this.state.prevURL,
+																		loadPlaylists: this.loadPlaylists.bind(this) }),
+				React.createElement("table", { className: "table table-hover" },
+					React.createElement("thead", null,
+						React.createElement("tr", null,
+							React.createElement("th", { style: { width: "30px" }}),
+							React.createElement("th", null, "Name"),
+							React.createElement("th", { style: { width: "150px" } }, "Owner"),
+							React.createElement("th", { style: { width: "100px" } }, "Tracks"),
+							React.createElement("th", { style: { width: "120px" } }, "Public?"),
+							React.createElement("th", { style: { width: "120px" } }, "Collaborative?"),
+							React.createElement("th", { style: { width: "100px" }, className: "text-right"},
+								React.createElement("button", { className: "btn btn-default btn-xs", type: "submit", id: "exportAll",
+									onClick: this.exportPlaylists.bind(this) },
+									React.createElement("i", { className: "fa fa-file-archive-o"}), " Export All")))),
+					React.createElement("tbody", null, this.state.playlists.map((playlist, i) => {
+						return React.createElement(PlaylistRow, { playlist: playlist, access_token: this.props.access_token, row: i});
+					}))),
+				React.createElement(Paginator, { nextURL: this.state.nextURL, prevURL: this.state.prevURL,
+															loadPlaylists: this.loadPlaylists.bind(this) }));
+		} else {
+		  return React.createElement("div", { className: "spinner"});
+		}
 	}
 }
 
