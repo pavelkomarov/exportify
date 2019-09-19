@@ -1,7 +1,7 @@
 [![Build Status](http://img.shields.io/travis/pavelkomarov/exportify.svg?style=flat)](https://travis-ci.org/pavelkomarov/exportify)
 [![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/pavelkomarov/exportify/master)
 
-Export your Spotify playlists for analysis or just safekeeping: [https://pavelkomarov.com/exportify/app](https://pavelkomarov.com/exportify/app)
+Export your Spotify playlists for analysis or just safekeeping: [exportify.net](https://exportify.net)
 
 <a href="https://pavelkomarov.com/exportify/app"><img src="screenshot.png"/></a>
 
