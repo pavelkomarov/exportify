@@ -56,7 +56,7 @@ Developers wishing to make changes to Exportify should use a local web server. F
 python -m http.server
 ```
 
-Then open [http://localhost:8000/app.html](http://localhost:8000/app.html).
+Then open [http://localhost:8000](http://localhost:8000).
 
 ### Contributing
 
