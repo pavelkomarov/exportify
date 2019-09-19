@@ -33,6 +33,7 @@ utils = {
 	logout() {
 		playlistsContainer.innerHTML = '<iframe src="https://www.spotify.com/logout/"></iframe>';
 		playlistsContainer.style.display = 'none';
+		console.log([location.protocol, '//', location.host, location.pathname].join(''));
 		setTimeout(() => window.location = [location.protocol, '//', location.host, location.pathname].join(''), 1000);
 	}
 }
