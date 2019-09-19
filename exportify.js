@@ -7,7 +7,6 @@ utils = {
 	// being redirected to the original website.
 	// https://developer.spotify.com/documentation/general/guides/authorization-guide/
 	authorize() {
-		console.log(encodeURIComponent([location.protocol, '//', location.host, location.pathname].join('')));
 		window.location = "https://accounts.spotify.com/authorize" +
 			"?client_id=d99b082b01d74d61a100c9a0e056380b" +
 			"&redirect_uri=" + encodeURIComponent([location.protocol, '//', location.host, location.pathname].join('')) +
@@ -33,8 +32,7 @@ utils = {
 	logout() {
 		playlistsContainer.innerHTML = '<iframe src="https://www.spotify.com/logout/"></iframe>';
 		playlistsContainer.style.display = 'none';
-		console.log([location.protocol, '//', location.host, location.pathname].join(''));
-		setTimeout(() => window.location = [location.protocol, '//', location.host, location.pathname].join(''), 1000);
+		setTimeout(() => window.location = [location.protocol, '//', location.host, location.pathname].join(''), 1500);
 	}
 }
 
