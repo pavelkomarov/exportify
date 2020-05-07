@@ -5,7 +5,7 @@ Export your Spotify playlists for analysis or just safekeeping: [exportify.net](
 
 <a href="https://pavelkomarov.com/exportify/app"><img src="screenshot.png"/></a>
 
-This is a hard fork of [the original Exportify repo](https://github.com/watsonbox/exportify). I've simplified and updated the code, gotten rid of the outdated tests, set up automatic deployment to github pages, fixed a parsing bug, enhanced the set of features, added logout functionality, and provided an ipython notebook to do something interesting with the data.
+This is a hard fork of [the original Exportify repo](https://github.com/watsonbox/exportify). I've simplified and updated the code, instituted rate limiting so exporting large or all playlists actually works, gotten rid of the outdated tests, set up automatic deployment to github pages, fixed a parsing bug, enhanced the set of features, added logout functionality, and provided an ipython notebook to do something interesting with the data.
 
 ### Export Format
 
