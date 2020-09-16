@@ -1,4 +1,4 @@
-[![Build Status](http://img.shields.io/travis/pavelkomarov/exportify.svg?style=flat)](https://travis-ci.org/pavelkomarov/exportify)
+[![Build Status](http://img.shields.io/travis/pavel-aicradle/exportify.svg?style=flat)](https://travis-ci.org/pavel-aicradle/exportify)
 [![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/pavel-aicradle/exportify/master)
 
 Export your Spotify playlists for analysis or just safekeeping: [exportify.net](https://exportify.net)
