@@ -280,7 +280,7 @@ let PlaylistExporter = {
 			});
 			// add features
 			features = features.flat();
-			data.forEach((row, i) => features[i].forEach(feat => row.push(feat)));
+			data.forEach((row, i) => features[i]?.forEach(feat => row.push(feat)));
 			// add titles
 			data.unshift(["Spotify ID", "Artist IDs", "Track Name", "Album Name", "Artist Name(s)", "Release Date",
 				"Duration (ms)", "Popularity", "Added By", "Added At", "Genres", "Danceability", "Energy", "Key", "Loudness",
