@@ -286,7 +286,7 @@ let PlaylistExporter = {
 			});
 			// add features
 			features = features.flat(); // get rid of the batch dimension (only 100 songs per call)
-			data.forEach((row, i) => features[i].forEach(feat => row.push(feat)));
+			data.forEach((row, i) => features[i]?.forEach(feat => row.push(feat)));
 			// add titles https://www.w3schools.com/jsref/jsref_unshift.asp
 			data.unshift(["Spotify ID", "Artist IDs", "Track Name", "Album Name", "Artist Name(s)", "Release Date",
 				"Duration (ms)", "Popularity", "Added By", "Added At", "Genres", "Danceability", "Energy", "Key", "Loudness",
