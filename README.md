@@ -44,7 +44,7 @@ Run the [Jupyter Notebook](https://github.com/pavelkomarov/exportify/blob/master
 - Most common genres
 - Release date distribution
 - Popularity distribution
-- Comparisons of Acousticness, Valence, etc. to normal
+- Your songs' distributions of Acousticness, Valence, etc.
 - Time signatures and keys
 - All songs plotted in 2D to indicate relative similarities
 
@@ -54,7 +54,7 @@ Run the [Jupyter Notebook](https://github.com/pavelkomarov/exportify/blob/master
 Developers wishing to make changes to Exportify should use a local web server. For example, using Python (in the Exportify repo dir):
 
 ```bash
-python -m http.server
+python3 -m http.server
 ```
 
 Then open [http://localhost:8000](http://localhost:8000).
