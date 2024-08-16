@@ -71,6 +71,25 @@ class PlaylistTable extends React.Component {
 		ZipExporter.export(this.props.access_token, this.state.userid, this.state.nplaylists);
 	}
 
+	// Make the table sortable
+	sortRows(column) {
+		// Change arrow icons appropriately
+		let allSorts = Array.from(document.querySelectorAll('[id^="sortBy"]')) // querySelectorAll returns NodeList, not Array https://eloquentjavascript.net/14_dom.html#h-5ooQzToxht https://developer.mozilla.org/en-US/docs/Web/API/NodeList
+		let arrow = allSorts.find(el => el.id == "sortBy"+column); // find the one just clicked
+		allSorts.forEach(el => { if (el != arrow) {el.className = "fa fa-fw fa-sort"; el.style.color = '#C0C0C0'} }); // change the other two back to the greyed-out double-arrow
+		if (arrow.className.endsWith("fa-sort") || arrow.className.endsWith("fa-sort-asc")) { arrow.className = "fa fa-fw fa-sort-desc" } //if the icon is fa-sort or asc, change to desc
+		else if (arrow.className.endsWith("fa-sort-desc")) { arrow.className = "fa fa-fw fa-sort-asc" } //if desc, change to asc
+		arrow.style.color = "#000000"; // darken
+		
+		// rearrange table rows
+		function field(p) { // get the keyed column contents
+			if (column == "Name") { return p.name; } else if (column == "Owner") { return p.owner.id; } }
+		this.setState({ playlists: this.state.playlists.sort((a, b) => // make sure use setState() so React reacts! Calling render() doesn't cut the mustard.
+			arrow.className.endsWith("desc") ? // figure out whether we're ascending or descending
+			column == "Tracks" ? a.tracks.total > b.tracks.total : field(a).localeCompare(field(b)) : // for numeric column, just use <, >
+			column == "Tracks" ? a.tracks.total < b.tracks.total : field(b).localeCompare(field(a))) }); // for string columns, use something fancier to handle capitals and such
+	}
+
 	// createElement is a legacy API https://react.dev/reference/react/createElement, but it's unclear what the
 	// recommendation is to modernize https://stackoverflow.com/questions/78433001/why-is-createelement-a-part-of-the-legacy-api
 	render() {
@@ -82,14 +101,16 @@ class PlaylistTable extends React.Component {
 					React.createElement("thead", null, // header row
 						React.createElement("tr", null,
 							React.createElement("th", { style: { width: "30px" }}),
-							React.createElement("th", null, "Name"),
-							React.createElement("th", { style: { width: "150px" } }, "Owner"),
-							React.createElement("th", { style: { width: "100px" } }, "Tracks"),
-							React.createElement("th", { style: { width: "120px" } }, "Public?"),
-							React.createElement("th", { style: { width: "120px" } }, "Collaborative?"),
-							React.createElement("th", { style: { width: "100px" }, className: "text-right"},
-								React.createElement("button", { className: "btn btn-default btn-xs", type: "submit", id: "exportAll",
-									onClick: this.exportPlaylists.bind(this) },
+							React.createElement("th", null, "Name",
+								React.createElement("i", { className: "fa fa-fw fa-sort", style: { color: '#C0C0C0' }, id: "sortByName", onClick: this.sortRows.bind(this, "Name")} )),
+							React.createElement("th", null, "Owner",
+								React.createElement("i", { className: "fa fa-fw fa-sort", style: { color: '#C0C0C0' }, id: "sortByOwner", onClick: this.sortRows.bind(this, "Owner")} )),
+							React.createElement("th", null, "Tracks",
+								React.createElement("i", { className: "fa fa-fw fa-sort", style: { color: '#C0C0C0' }, id: "sortByTracks", onClick: this.sortRows.bind(this, "Tracks")} )),
+							React.createElement("th", null, "Public?"),
+							React.createElement("th", null, "Collaborative?"),
+							React.createElement("th", { className: "text-right"},
+								React.createElement("button", { className: "btn btn-default btn-xs", type: "submit", id: "exportAll", onClick: this.exportPlaylists.bind(this) },
 									React.createElement("i", { className: "fa fa-file-archive-o"}), " Export All")))),
 					React.createElement("tbody", null, this.state.playlists.map((playlist, i) => {
 						return React.createElement(PlaylistRow, { playlist: playlist, access_token: this.props.access_token, row: i});
@@ -101,6 +122,7 @@ class PlaylistTable extends React.Component {
 		}
 	}
 }
+
 
 // Separated out for convenience, I guess. The table's render method defines a bunch of these in a loop, which I'm
 // guessing implicitly calls this thing's render method.
