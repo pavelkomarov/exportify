@@ -78,7 +78,7 @@ class PlaylistTable extends React.Component {
 		let arrow = allSorts.find(el => el.id == "sortBy"+column); // find the one just clicked
 		allSorts.forEach(el => { if (el != arrow) {el.className = "fa fa-fw fa-sort"; el.style.color = '#C0C0C0'} }); // change the other two back to the greyed-out double-arrow
 		if (arrow.className.endsWith("fa-sort") || arrow.className.endsWith("fa-sort-asc")) { arrow.className = "fa fa-fw fa-sort-desc" } //if the icon is fa-sort or asc, change to desc
-		else if (arrow.className.endsWith("fa-sort-desc")) { arrow.className = "fa fa-fw fa-sort-asc" } //if desc, change to asc
+		else if (arrow.className.endsWith("fa-sort-desc")) { arrow.className = "fa fa-fw fa-sort-asc" } //if descending, change to ascending
 		arrow.style.color = "#000000"; // darken
 		
 		// rearrange table rows
@@ -122,7 +122,6 @@ class PlaylistTable extends React.Component {
 		}
 	}
 }
-
 
 // Separated out for convenience, I guess. The table's render method defines a bunch of these in a loop, which I'm
 // guessing implicitly calls this thing's render method.
