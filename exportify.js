@@ -7,7 +7,7 @@ utils = {
 	// being redirected to the original website.
 	// https://developer.spotify.com/documentation/web-api/concepts/authorization
 	// https://developer.spotify.com/documentation/web-api/concepts/scopes
-	async authorize() { // This is bound to the login button in the HTML and gets called when the login button is clicked.
+	authorize() { // This is bound to the login button in the HTML and gets called when the login button is clicked.
 		window.location = "https://accounts.spotify.com/authorize" +
 			"?client_id=d99b082b01d74d61a100c9a0e056380b" +
 			"&redirect_uri=" + encodeURIComponent([location.protocol, '//', location.host, location.pathname].join('')) +
