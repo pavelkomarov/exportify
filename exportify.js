@@ -106,7 +106,7 @@ class PlaylistTable extends React.Component {
 								React.createElement("i", { className: "fa fa-fw fa-sort", style: { color: '#C0C0C0' }, id: "sortByName", onClick: () => this.sortRows("Name")} )),
 							React.createElement("th", null, "Owner",
 								React.createElement("i", { className: "fa fa-fw fa-sort", style: { color: '#C0C0C0' }, id: "sortByOwner", onClick: () => this.sortRows("Owner")} )),
-							React.createElement("th", {style: {minWidth: "80px"}}, "Tracks",
+							React.createElement("th", {style: {minWidth: "100px"}}, "Tracks",
 								React.createElement("i", { className: "fa fa-fw fa-sort", style: { color: '#C0C0C0' }, id: "sortByTracks", onClick: () => this.sortRows("Tracks")} )),
 							React.createElement("th", null, "Public?"),
 							React.createElement("th", null, "Collaborative?"),
