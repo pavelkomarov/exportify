@@ -52,9 +52,8 @@ class PlaylistTable extends React.Component {
 
 		// fake a playlist-like structure for the liked songs, so it plays well with the rest of the code
 		let liked_songs = {name: "Liked Songs", external_urls: {spotify: "https://open.spotify.com/collection/tracks"},
-			images:[{url: "https://placehold.co/30?text=blank"}],
-			owner: {id: user.id, external_urls: {spotify: user.external_urls.spotify}}, tracks: {total: library.total,
-			href: "https://api.spotify.com/v1/me/tracks"}, public: false, collaborative: false}
+			images:[{url: "liked_songs.jpeg"}], owner: {id: user.id, external_urls: {spotify: user.external_urls.spotify}},
+			tracks: {total: library.total, href: "https://api.spotify.com/v1/me/tracks"}, public: false, collaborative: false}
 		let playlists = [[liked_songs]] // double list so .flat() flattens everything right later
 
 		// Retrieve the list of all the user's playlists by querying the playlists endpoint.
@@ -119,10 +118,8 @@ class PlaylistTable extends React.Component {
 					React.createElement("tbody", null,
 						this.state.playlists.map((playlist, i) => 
 							React.createElement("tr", null, // tr = table row
-								React.createElement("td", null, playlist.name == "Liked Songs" ? // td = table data
-									React.createElement("i", { className: "fa fa-heart", style: { color: "#3A30CF" } }):
-									React.createElement("img", { src: playlist.images && playlist.images.length > 0 ? playlist.images[0].url : "https://placehold.co/30?text=blank" , style: { width: "30px", height: "30px" }})),
-									//React.createElement("i", { className: "fa fa-music" })), 
+								React.createElement("td", null, // td = table data
+									React.createElement("img", { src: playlist.images?.length > 0 ? playlist.images[0].url : "https://placehold.co/30?text=blank", style: { width: "30px", height: "30px" }})),
 								React.createElement("td", null, React.createElement("a", { href: playlist.external_urls.spotify }, playlist.name)),
 								React.createElement("td", null, React.createElement("a", { href: playlist.owner.external_urls.spotify }, playlist.owner.id)),
 								React.createElement("td", null, playlist.tracks.total),
