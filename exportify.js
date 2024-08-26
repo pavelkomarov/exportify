@@ -1,7 +1,7 @@
 rateLimit = '<p><i class="fa fa-bolt" style="font-size: 50px; margin-bottom: 20px"></i></p><p>Exportify has encountered a <a target="_blank" href="https://developer.spotify.com/documentation/web-api/concepts/rate-limits">rate limiting</a> error, which can cause missing responses. The browser is actually caching those packets, so if you rerun the script (wait a minute and click the button again) a few times, it keeps filling in its missing pieces until it succeeds. Open developer tools with <tt>ctrl+shift+E</tt> and watch under the network tab to see this in action. Good luck.</p>';
 
 // A collection of functions to create and send API queries
-utils = {
+const utils = {
 	// Query the spotify server (by just setting the url) to let it know we want a session. This is literally
 	// accomplished by navigating to this web address, where we may have to enter Spotify credentials, then
 	// being redirected to the original website.
@@ -213,7 +213,7 @@ let PlaylistExporter = {
 		// means a second wave of traffic, 50 artists at a time the maximum allowed.
 		let genre_promise = data_promise.then(() => {
 			artist_ids = Array.from(artist_ids) // Make groups of 50 artists, to all be queried together
-			artist_chunks = []; while (artist_ids.length) { artist_chunks.push(artist_ids.splice(0, 50)) }
+			let artist_chunks = []; while (artist_ids.length) { artist_chunks.push(artist_ids.splice(0, 50)) }
 			let artists_promises = artist_chunks.map((chunk_ids, i) => utils.apiCall(
 				'https://api.spotify.com/v1/artists?ids='+chunk_ids.join(','), access_token, 100*i))
 			return Promise.all(artists_promises).then(responses => {
@@ -226,9 +226,9 @@ let PlaylistExporter = {
 
 		// Make queries for song audio features, 100 songs at a time. Happens after genre_promise has finished, to build in delay.
 		let features_promise = Promise.all([data_promise, genre_promise]).then(values => {
-			data = values[0];
+			let data = values[0];
 			let songs_promises = data.map((chunk, i) => { // remember data is an array of arrays, each subarray 100 tracks
-				ids = chunk.map(song => song[0]).join(','); // the id lives in the first position
+				let ids = chunk.map(song => song[0]).join(','); // the id lives in the first position
 				return utils.apiCall('https://api.spotify.com/v1/audio-features?ids='+ids , access_token, 100*i);
 			});
 			return Promise.all(songs_promises).then(responses => {
@@ -244,12 +244,12 @@ let PlaylistExporter = {
 
 		// join the tables, label the columns, and put all data in a single csv string
 		return Promise.all([data_promise, genre_promise, features_promise]).then(values => {
-			[data, artist_genres, features] = values
+			let [data, artist_genres, features] = values
 			// add genres
 			data = data.flat() // get rid of the batch dimension (only 100 songs per call)
 			data.forEach(row => {
-				artists = row[1].substring(1, row[1].length-1).split(',') // strip the quotes
-				deduplicated_genres = new Set(artists.map(a => artist_genres[a]).join(",").split(",")) // in case multiple artists
+				let artists = row[1].substring(1, row[1].length-1).split(',') // strip the quotes
+				let deduplicated_genres = new Set(artists.map(a => artist_genres[a]).join(",").split(",")) // in case multiple artists
 				row.push('"'+Array.from(deduplicated_genres).filter(x => x != "").join(",")+'"') // remove empty strings
 			})
 			// add features
@@ -260,7 +260,7 @@ let PlaylistExporter = {
 				"Duration (ms)", "Popularity", "Added By", "Added At", "Genres", "Danceability", "Energy", "Key", "Loudness",
 				"Mode", "Speechiness", "Acousticness", "Instrumentalness", "Liveness", "Valence", "Tempo", "Time Signature"])
 			// make a string
-			csv = ''; data.forEach(row => { csv += row.join(",") + "\n" })
+			let csv = ''; data.forEach(row => { csv += row.join(",") + "\n" })
 			return csv
 		})
 	},
@@ -274,7 +274,7 @@ let PlaylistExporter = {
 // runs when the page loads
 window.onload = () => {
 	let [root, hash] = window.location.href.split('#')
-	dict = {}
+	let dict = {}
 	if (hash) { // If there is any information in the URL, contained after a # and separated by &, parse it out
 		let params = hash.split('&')
 		for (let i = 0; i < params.length; i++) {
