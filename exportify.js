@@ -86,19 +86,10 @@ class PlaylistTable extends React.Component {
 		// rearrange table rows
 		function field(p) { // get the keyed column contents
 			if (column == "Name") { return p.name } else if (column == "Owner") { return p.owner.id } }
-
-		// make sure use setState() so React reacts! Calling render() doesn't cut the mustard.	
-		this.setState({ playlists: this.state.playlists.sort((a, b) => {
-			const isDescending = arrow.className.endsWith("desc");
-			let comparison;
-			if (column === "Tracks") {
-				comparison = a.tracks.total - b.tracks.total; // Numeric comparison
-			} else {
-				comparison = field(a).localeCompare(field(b)); // String comparison
-			}
-			// If descending, invert the comparison result
-			return isDescending ? -comparison : comparison;
-		}) });
+		this.setState({ playlists: this.state.playlists.sort((a, b) => // make sure to use setState() so React reacts! Calling render() doesn't cut the mustard.	
+			arrow.className.endsWith("desc") ? // figure out whether we're ascending or descending
+				column == "Tracks" ? a.tracks.total - b.tracks.total : field(a).localeCompare(field(b)) : // for numeric column, just use the difference to get a + or - number
+				column == "Tracks" ? b.tracks.total - a.tracks.total : field(b).localeCompare(field(a))) }) // for string columns, use something fancier to handle capitals and such
 	}
 
 	// createElement is a legacy API https://react.dev/reference/react/createElement, but it's unclear what the
