@@ -1,4 +1,4 @@
-rateLimit = '<p><i class="fa fa-bolt" style="font-size: 50px; margin-bottom: 20px"></i></p><p>Exportify has encountered a <a target="_blank" href="https://developer.spotify.com/documentation/web-api/concepts/rate-limits">rate limiting</a> error, which can cause missing responses. The browser is actually caching those packets, so if you rerun the script (wait a minute and click the button again) a few times, it keeps filling in its missing pieces until it succeeds. Open developer tools with <tt>ctrl+shift+E</tt> and watch under the network tab to see this in action. Good luck.</p>';
+rateLimit = '<p><i class="fa fa-bolt" style="font-size: 50px; margin-bottom: 20px"></i></p><p>Exportify has encountered a <a target="_blank" href="https://developer.spotify.com/documentation/web-api/concepts/rate-limits">rate limiting</a> error, which can cause missing responses. The browser is actually caching those packets, so if you rerun the script (wait a minute and click the button again) a few times, it keeps filling in its missing pieces until it succeeds. Open developer tools with <tt>ctrl+shift+E</tt> and watch under the network tab to see this in action. Good luck.</p>'
 
 // A collection of functions to create and send API queries
 const utils = {
@@ -12,7 +12,7 @@ const utils = {
 			"?client_id=d99b082b01d74d61a100c9a0e056380b" +
 			"&redirect_uri=" + encodeURIComponent([location.protocol, '//', location.host, location.pathname].join('')) +
 			"&scope=playlist-read-private%20playlist-read-collaborative%20user-library-read" + // access to particular scopes of info defined here
-			"&response_type=token";
+			"&response_type=token"
 	},
 
 	// Make an asynchronous call to the server. Promises are *weird*. Careful here! You have to call .json() on the
@@ -29,12 +29,11 @@ const utils = {
 	},
 
 	// Logging out of Spotify is much like logging in: You have to navigate to a certain url. But unlike logging in, there is
-	// no way to redirect back to my home page. So open the logout page in an invisible iframe, then redirect to the homepage
-	// after a second and a half, which is almost always long enough for the logout request to go through.
+	// no way to redirect back to my home page. So open the logout page in a new tab, then redirect to the homepage after a
+	// second, which is almost always long enough for the logout request to go through.
 	logout() {
-		playlistsContainer.innerHTML = '<iframe src="https://www.spotify.com/logout/"></iframe>'
-		playlistsContainer.style.display = 'none' // Wipe the screen for a moment to let the user know something is happening
-		setTimeout(() => window.location = [location.protocol, '//', location.host, location.pathname].join(''), 1500)
+		let logout = window.open("https://www.spotify.com/logout")
+		setTimeout(() => {logout.close(); window.location = [location.protocol, '//', location.host, location.pathname].join('')}, 1000)
 	}
 }
 
