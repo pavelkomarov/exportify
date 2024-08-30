@@ -160,7 +160,8 @@ let PlaylistExporter = {
 				while (zip.file(fileName + ".csv")) { fileName += "_" } // Add underscores if the file already exists so playlists with duplicate names don't overwrite each other.
 				zip.file(fileName + ".csv", csv)
 			} catch (e) { // Surface all errors
-				error.innerHTML = error.innerHTML.slice(0, -120) + "Couldn't export " + playlist.name + " with id " +
+				// 117 is the length of the "Please ..." message at the end. Slice it off before adding on subsequent errors.
+				error.innerHTML = error.innerHTML.slice(0, -117) + "Couldn't export " + playlist.name + " with id " +
 					playlist.id + ". Encountered <tt>" + e + "</tt><br>" + e.stack +
 					'<br>Please <a href="https://github.com/pavelkomarov/exportify/issues">let us know</a>. ' +
 					"The others are still being zipped."
