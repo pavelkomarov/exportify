@@ -130,7 +130,7 @@ class PlaylistTable extends React.Component {
 	}
 }
 
-// Handles exporting a single playlist as a CSV file
+// Handles exporting playlists as CSV files
 let PlaylistExporter = {
 	// Take the access token string and playlist object, generate a csv from it, and when that data is resolved and
 	// returned, save to a file.
