@@ -141,7 +141,7 @@ let PlaylistExporter = {
 			saveAs(new Blob(["\uFEFF" + csv], { type: "text/csv;charset=utf-8" }), this.fileName(playlist) + ".csv")
 		} catch (e) {
 			error.innerHTML += "Couldn't export " + playlist.name + ". Encountered <tt>" + e + "</tt><br>" + e.stack +
-					'<br>Please <a href="https://github.com/pavelkomarov/exportify/issues/10">let us know</a>.'
+					'<br>Please <a href="https://github.com/pavelkomarov/exportify/issues">let us know</a>.'
 		} finally { // change back the export button's text
 			document.getElementById("export"+row).innerHTML = '<i class="fa fa-download"></i> Export'
 		}
@@ -162,7 +162,7 @@ let PlaylistExporter = {
 			} catch (e) { // Surface all errors
 				error.innerHTML = error.innerHTML.slice(0, -120) + "Couldn't export " + playlist.name + " with id " +
 					playlist.id + ". Encountered <tt>" + e + "</tt><br>" + e.stack +
-					'<br>Please <a href="https://github.com/pavelkomarov/exportify/issues/10">let us know</a>. ' +
+					'<br>Please <a href="https://github.com/pavelkomarov/exportify/issues">let us know</a>. ' +
 					"The others are still being zipped."
 			}
 		}
