@@ -185,16 +185,21 @@ let PlaylistExporter = {
 		// "returns a single Promise that resolves when all of the promises passed as an iterable have resolved"
 		// https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Promise/all
 		let artist_ids = new Set()
+		let album_ids = new Set()
 		let data_promise = Promise.all(requests).then(responses => { // Gather all the data from the responses in a table.
 			return responses.map(response => { // apply to all responses
 				return response.items.map(song => { // apply to all songs in each response
 					// Safety check! If there are artists listed and they have non-null identifier, add them to the set
 					song.track?.artists?.forEach(a => { if (a && a.id) { artist_ids.add(a.id) } });
+					 // Collect album IDs
+					 if (song.track?.album && song.track.album.id) {
+						album_ids.add(song.track.album.id);
+					}
 					// Multiple, comma-separated artists can throw off csv, so surround with ""
 					// Same for track and album names, which may contain commas and even quotation marks! Treat with care.
 					// Safety-checking question marks!
 					return [song.track?.id, '"'+song.track?.artists?.map(artist => { return artist ? artist.id : null }).join(',')+'"',
-						'"'+song.track?.name?.replace(/"/g,'')+'"', '"'+song.track?.album?.name?.replace(/"/g,'')+'"',
+						'"'+song.track?.name?.replace(/"/g,'')+'"', song.track?.album?.id, '"'+song.track?.album?.name?.replace(/"/g,'')+'"',
 						'"'+song.track?.artists?.map(artist => { return artist ? artist.name : null}).join(',')+'"',
 						song.track?.album?.release_date, song.track?.duration_ms, song.track?.popularity, song.added_by?.uri, song.added_at];
 				})
@@ -216,8 +221,30 @@ let PlaylistExporter = {
 			})
 		})
 
+
+		// Step 3: Fetch album details - another wave of traffic, 20 albums at a time max
+		let album_promise = data_promise.then(() => {
+			album_ids = Array.from(album_ids)
+			let album_chunks = []; while (album_ids.length) { album_chunks.push(album_ids.splice(0, 20)) }
+			let album_promises = album_chunks.map((chunk_ids, i) => utils.apiCall(
+				'https://api.spotify.com/v1/albums?ids=' + chunk_ids.join(','), access_token, 100 * i))
+			return Promise.all(album_promises).then(responses => {
+				let album_details = {}
+				responses.forEach(response => response.albums.forEach(album => {
+					if (album) {
+						album_details[album.id] = {
+							label: album.label,
+							total_tracks: album.total_tracks,
+							album_type: album.album_type
+						};
+					}
+				}));
+				return album_details
+			});
+		});
+
 		// Make queries for song audio features, 100 songs at a time. Happens after genre_promise has finished, to build in delay.
-		let features_promise = Promise.all([data_promise, genre_promise]).then(values => {
+		let features_promise = Promise.all([data_promise, genre_promise, album_promise]).then(values => {
 			let data = values[0];
 			let songs_promises = data.map((chunk, i) => { // remember data is an array of arrays, each subarray 100 tracks
 				let ids = chunk.map(song => song[0]).join(','); // the id lives in the first position
@@ -235,21 +262,28 @@ let PlaylistExporter = {
 		})
 
 		// join the tables, label the columns, and put all data in a single csv string
-		return Promise.all([data_promise, genre_promise, features_promise]).then(values => {
-			let [data, artist_genres, features] = values
+		return Promise.all([data_promise, genre_promise, album_promise, features_promise]).then(values => {
+			let [data, artist_genres, album_details, features] = values
 			// add genres
 			data = data.flat() // get rid of the batch dimension (only 100 songs per call)
 			data.forEach(row => {
 				let artists = row[1].substring(1, row[1].length-1).split(',') // strip the quotes
 				let deduplicated_genres = new Set(artists.map(a => artist_genres[a]).join(",").split(",")) // in case multiple artists
 				row.push('"'+Array.from(deduplicated_genres).filter(x => x != "").join(",")+'"') // remove empty strings
+
+				// Add album details
+				let album_id = row[3]
+				let album_info = album_details[album_id] || {}
+				row.push(`"${album_info.label || ''}"`)
+				row.push(album_info.total_tracks || '')
+				row.push(`"${album_info.album_type || ''}"`)
 			})
 			// add features
 			features = features.flat() // get rid of the batch dimension (only 100 songs per call)
 			data.forEach((row, i) => features[i]?.forEach(feat => row.push(feat)))
 			// add titles https://www.w3schools.com/jsref/jsref_unshift.asp
-			data.unshift(["Spotify ID", "Artist IDs", "Track Name", "Album Name", "Artist Name(s)", "Release Date",
-				"Duration (ms)", "Popularity", "Added By", "Added At", "Genres", "Danceability", "Energy", "Key", "Loudness",
+			data.unshift(["Spotify ID", "Artist IDs", "Track Name", "Album ID", "Album Name", "Artist Name(s)", "Release Date",
+				"Duration (ms)", "Popularity", "Added By", "Added At", "Genres", "Label", "Total Album Tracks", "Album Type", "Danceability", "Energy", "Key", "Loudness",
 				"Mode", "Speechiness", "Acousticness", "Instrumentalness", "Liveness", "Valence", "Tempo", "Time Signature"])
 			// make a string
 			let csv = ''; data.forEach(row => { csv += row.join(",") + "\n" })
