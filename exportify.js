@@ -221,7 +221,7 @@ let PlaylistExporter = {
 
 
 		// Step 3: Fetch album details - another wave of traffic, 20 albums at a time max
-		let album_promise = data_promise.then(() => {
+		let album_promise = Promise.all([data_promise, genre_promise]).then(() => {
 			album_ids = Array.from(album_ids)
 			let album_chunks = []; while (album_ids.length) { album_chunks.push(album_ids.splice(0, 20)) }
 			let album_promises = album_chunks.map((chunk_ids, i) => utils.apiCall(
