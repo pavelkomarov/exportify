@@ -221,7 +221,7 @@ let PlaylistExporter = {
 			album_ids = Array.from(album_ids) // chunk set of ids into 20s
 			let album_chunks = []; while (album_ids.length) { album_chunks.push(album_ids.splice(0, 20)) }
 			let album_promises = album_chunks.map((chunk_ids, i) => utils.apiCall(
-				'https://api.spotify.com/v1/albums?ids=' + chunk_ids.join(','), access_token, 100*i))
+				'https://api.spotify.com/v1/albums?ids=' + chunk_ids.join(','), access_token, 120*i))
 			return Promise.all(album_promises).then(responses => {
 				let record_labels = {} // analogous to genres
 				responses.forEach(response => response.albums.forEach(
