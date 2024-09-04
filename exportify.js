@@ -183,18 +183,20 @@ let PlaylistExporter = {
 		// "returns a single Promise that resolves when all of the promises passed as an iterable have resolved"
 		// https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Promise/all
 		let artist_ids = new Set()
+		let album_ids = new Set()
 		let data_promise = Promise.all(requests).then(responses => { // Gather all the data from the responses in a table.
 			return responses.map(response => { // apply to all responses
 				return response.items.map(song => { // apply to all songs in each response
-					// Safety check! If there are artists listed and they have non-null identifier, add them to the set
-					song.track?.artists?.forEach(a => { if (a && a.id) { artist_ids.add(a.id) } });
+					// Safety check! If there are artists/album listed and they have non-null identifier, add them to the sets
+					song.track?.artists?.forEach(a => { if (a && a.id) { artist_ids.add(a.id) } })
+					if (song.track?.album && song.track.album.id) { album_ids.add(song.track.album.id) }
 					// Multiple, comma-separated artists can throw off csv, so surround with ""
 					// Same for track and album names, which may contain commas and even quotation marks! Treat with care.
 					// Safety-checking question marks!
-					return [song.track?.id, '"'+song.track?.artists?.map(artist => { return artist ? artist.id : null }).join(',')+'"',
+					return [song.track?.id, '"'+song.track?.artists?.map(artist => { return artist ? artist.id : null }).join(',')+'"', song.track?.album?.id,
 						'"'+song.track?.name?.replace(/"/g,'')+'"', '"'+song.track?.album?.name?.replace(/"/g,'')+'"',
 						'"'+song.track?.artists?.map(artist => { return artist ? artist.name : null}).join(',')+'"',
-						song.track?.album?.release_date, song.track?.duration_ms, song.track?.popularity, song.added_by?.uri, song.added_at];
+						song.track?.album?.release_date, song.track?.duration_ms, song.track?.popularity, song.added_by?.id, song.added_at];
 				})
 			})
 		})
@@ -209,18 +211,32 @@ let PlaylistExporter = {
 			return Promise.all(artists_promises).then(responses => {
 				let artist_genres = {} // build a dictionary, rather than a table
 				responses.forEach(response => response.artists.forEach(
-					artist => {if (artist) {artist_genres[artist.id] = artist.genres.join(',')}} )) // these are the artists who had ids before, but it's still possible they aren't in the genre database
+					artist => { if (artist) {artist_genres[artist.id] = artist.genres.join(',')} } )) // these are the artists who had ids before, but it's still possible they aren't in the genre database
 				return artist_genres
 			})
 		})
 
+		// Fetch album details, another wave of traffic, 20 albums at a time max
+		let album_promise = Promise.all([data_promise, genre_promise]).then(() => {
+			album_ids = Array.from(album_ids) // chunk set of ids into 20s
+			let album_chunks = []; while (album_ids.length) { album_chunks.push(album_ids.splice(0, 20)) }
+			let album_promises = album_chunks.map((chunk_ids, i) => utils.apiCall(
+				'https://api.spotify.com/v1/albums?ids=' + chunk_ids.join(','), access_token, 100*i))
+			return Promise.all(album_promises).then(responses => {
+				let record_labels = {} // analogous to genres
+				responses.forEach(response => response.albums.forEach(
+					album => { if (album) { record_labels[album.id] = album.label } } ))
+				return record_labels
+			})
+		})
+
 		// Make queries for song audio features, 100 songs at a time. Happens after genre_promise has finished, to build in delay.
-		let features_promise = Promise.all([data_promise, genre_promise]).then(values => {
-			let data = values[0];
+		let features_promise = Promise.all([data_promise, genre_promise, album_promise]).then(values => {
+			let data = values[0]
 			let songs_promises = data.map((chunk, i) => { // remember data is an array of arrays, each subarray 100 tracks
-				let ids = chunk.map(song => song[0]).join(','); // the id lives in the first position
+				let ids = chunk.map(song => song.shift()).join(','); // the id lives in the first position; throw away once grabbed
 				return utils.apiCall('https://api.spotify.com/v1/audio-features?ids='+ids , access_token, 100*i);
-			});
+			})
 			return Promise.all(songs_promises).then(responses => {
 				return responses.map(response => { // for each response
 					return response.audio_features.map(feats => {
@@ -233,21 +249,24 @@ let PlaylistExporter = {
 		})
 
 		// join the tables, label the columns, and put all data in a single csv string
-		return Promise.all([data_promise, genre_promise, features_promise]).then(values => {
-			let [data, artist_genres, features] = values
-			// add genres
+		return Promise.all([data_promise, genre_promise, album_promise, features_promise]).then(values => {
+			let [data, artist_genres, record_labels, features] = values
 			data = data.flat() // get rid of the batch dimension (only 100 songs per call)
 			data.forEach(row => {
-				let artists = row[1].substring(1, row[1].length-1).split(',') // strip the quotes
-				let deduplicated_genres = new Set(artists.map(a => artist_genres[a]).join(",").split(",")) // in case multiple artists
+				// add genres
+				let artist_ids = row.shift().slice(1, -1).split(',') // strip the quotes from artist ids, and toss; user doesn't need to see ids
+				let deduplicated_genres = new Set(artist_ids.map(a => artist_genres[a]).join(",").split(",")) // in case multiple artists
 				row.push('"'+Array.from(deduplicated_genres).filter(x => x != "").join(",")+'"') // remove empty strings
+				// add album details
+				let album_id = row.shift()
+				row.push('"'+record_labels[album_id]+'"')
 			})
 			// add features
 			features = features.flat() // get rid of the batch dimension (only 100 songs per call)
 			data.forEach((row, i) => features[i]?.forEach(feat => row.push(feat)))
 			// add titles https://www.w3schools.com/jsref/jsref_unshift.asp
-			data.unshift(["Spotify ID", "Artist IDs", "Track Name", "Album Name", "Artist Name(s)", "Release Date",
-				"Duration (ms)", "Popularity", "Added By", "Added At", "Genres", "Danceability", "Energy", "Key", "Loudness",
+			data.unshift(["Track Name", "Album Name", "Artist Name(s)", "Release Date", "Duration (ms)", "Popularity", "Added By",
+				"Added At", "Genres", "Record Label", "Danceability", "Energy", "Key", "Loudness",
 				"Mode", "Speechiness", "Acousticness", "Instrumentalness", "Liveness", "Valence", "Tempo", "Time Signature"])
 			// make a string
 			let csv = ''; data.forEach(row => { csv += row.join(",") + "\n" })
