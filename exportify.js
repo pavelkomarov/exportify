@@ -1,4 +1,4 @@
-rateLimit = '<p><i class="fa fa-bolt" style="font-size: 50px; margin-bottom: 20px"></i></p><p>Exportify has encountered a <a target="_blank" href="https://developer.spotify.com/documentation/web-api/concepts/rate-limits">rate limiting</a> error, which can cause missing responses. The browser is actually caching those packets, so if you rerun the script (wait a minute and click the button again) a few times, it keeps filling in its missing pieces until it succeeds. Open developer tools with <tt>ctrl+shift+E</tt> and watch under the network tab to see this in action. Good luck.</p>'
+rateLimit = '<p><i class="fa fa-bolt" style="font-size: 50px; margin-bottom: 20px"></i></p><p>Exportify has encountered a <a target="_blank" href="https://developer.spotify.com/documentation/web-api/concepts/rate-limits">rate limiting</a> error, which can cause missing responses. The browser is actually caching those packets, so if you rerun the script (wait a minute and click the button again) a few times, it keeps filling in its missing pieces until it succeeds. Open developer tools with <tt>ctrl+shift+E</tt> and watch under the network tab to see this in action. Good luck.</p><br/>'
 
 // A collection of functions to create and send API queries
 const utils = {
@@ -24,7 +24,7 @@ const utils = {
 		let response = await fetch(url, { headers: { 'Authorization': 'Bearer ' + access_token} })
 		if (response.ok) { return response.json() }
 		else if (response.status == 401) { window.location = window.location.href.split('#')[0] } // Return to home page after auth token expiry
-		else if (response.status == 429) { error.innerHTML = rateLimit } // API Rate-limiting encountered (hopefully never happens with delays)
+		else if (response.status == 429) { if (!error.innerHTML.includes("fa-bolt")) { error.innerHTML += rateLimit } } // API Rate-limiting encountered (hopefully never happens with delays)
 		else { error.innerHTML = "The server returned an HTTP " + response.status + " response." } // the caller will fail
 	},
 
@@ -160,11 +160,9 @@ let PlaylistExporter = {
 				while (zip.file(fileName + ".csv")) { fileName += "_" } // Add underscores if the file already exists so playlists with duplicate names don't overwrite each other.
 				zip.file(fileName + ".csv", csv)
 			} catch (e) { // Surface all errors
-				// 117 is the length of the "Please ..." message at the end. Slice it off before adding on subsequent errors.
-				error.innerHTML = error.innerHTML.slice(0, -117) + "Couldn't export " + playlist.name + " with id " +
-					playlist.id + ". Encountered <tt>" + e + "</tt><br>" + e.stack +
-					'<br>Please <a href="https://github.com/pavelkomarov/exportify/issues">let us know</a>. ' +
-					"The others are still being zipped."
+				error.innerHTML += "Couldn't export " + playlist.name + " with id " + playlist.id + ". Encountered <tt>" + e +
+					"</tt><br>" + e.stack + '<br>Please <a href="https://github.com/pavelkomarov/exportify/issues">let us know</a>. ' +
+					"The others are still being zipped.<br/>"
 			}
 		}
 		exportAll.innerHTML= '<i class="fa fa-file-archive-o"></i> Export All' // change back button text
