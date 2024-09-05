@@ -169,6 +169,11 @@ let PlaylistExporter = {
 		saveAs(zip.generate({ type: "blob" }), "spotify_playlists.zip")
 	},
 
+	// take the playlist object and return an acceptable filename
+	fileName(playlist) {
+		return playlist.name.replace(/[^a-z0-9\- ]/gi, '').replace(/[ ]/gi, '_').toLowerCase(); // /.../gi is a Perl-style modifier, g for global, meaning all matches replaced, i for case-insensitive
+	},
+
 	// This is where the magic happens. The access token gives us permission to query this info from Spotify, and the
 	// playlist object gives us all the information we need to start asking for songs.
 	csvData(access_token, playlist) {
@@ -216,7 +221,7 @@ let PlaylistExporter = {
 			})
 		})
 
-		// Fetch album details, another wave of traffic, 20 albums at a time max
+		// Fetch album details, another wave of traffic, 20 albums at a time max. Happens after genre_promise has finished, to build in delay.
 		let album_promise = Promise.all([data_promise, genre_promise]).then(() => {
 			album_ids = Array.from(album_ids) // chunk set of ids into 20s
 			let album_chunks = []; while (album_ids.length) { album_chunks.push(album_ids.splice(0, 20)) }
@@ -230,7 +235,7 @@ let PlaylistExporter = {
 			})
 		})
 
-		// Make queries for song audio features, 100 songs at a time. Happens after genre_promise has finished, to build in delay.
+		// Make queries for song audio features, 100 songs at a time.
 		let features_promise = Promise.all([data_promise, genre_promise, album_promise]).then(values => {
 			let data = values[0]
 			let songs_promises = data.map((chunk, i) => { // remember data is an array of arrays, each subarray 100 tracks
@@ -272,11 +277,6 @@ let PlaylistExporter = {
 			let csv = ''; data.forEach(row => { csv += row.join(",") + "\n" })
 			return csv
 		})
-	},
-
-	// take the playlist object and return an acceptable filename
-	fileName(playlist) {
-		return playlist.name.replace(/[^a-z0-9\- ]/gi, '').replace(/[ ]/gi, '_').toLowerCase(); // /.../gi is a Perl-style modifier, g for global, meaning all matches replaced, i for case-insensitive
 	}
 }
 
