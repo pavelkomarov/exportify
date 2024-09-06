@@ -195,9 +195,8 @@ let PlaylistExporter = {
 					// Safety check! If there are artists/album listed and they have non-null identifier, add them to the sets
 					song.track?.artists?.forEach(a => { if (a && a.id) { artist_ids.add(a.id) } })
 					if (song.track?.album && song.track.album.id) { album_ids.add(song.track.album.id) }
-					// Multiple, comma-separated artists can throw off csv, so surround with ""
-					// Same for track and album names, which may contain commas and even quotation marks! Treat with care.
-					// Safety-checking question marks!
+					// Multiple, comma-separated artists can throw off csv, so surround with "". Same for track and album names,
+					// which may contain commas and even quotation marks! Treat with care. Null checking with question marks!
 					return [song.track?.id, '"'+song.track?.artists?.map(artist => { return artist ? artist.id : null }).join(',')+'"', song.track?.album?.id,
 						'"'+song.track?.name?.replace(/"/g,'')+'"', '"'+song.track?.album?.name?.replace(/"/g,'')+'"',
 						'"'+song.track?.artists?.map(artist => { return artist ? artist.name : null}).join(',')+'"',
@@ -269,12 +268,10 @@ let PlaylistExporter = {
 			// add features
 			features = features.flat() // get rid of the batch dimension (only 100 songs per call)
 			data.forEach((row, i) => features[i]?.forEach(feat => row.push(feat)))
-			// add titles https://www.w3schools.com/jsref/jsref_unshift.asp
-			data.unshift(["Track Name", "Album Name", "Artist Name(s)", "Release Date", "Duration (ms)", "Popularity", "Added By",
-				"Added At", "Genres", "Record Label", "Danceability", "Energy", "Key", "Loudness",
-				"Mode", "Speechiness", "Acousticness", "Instrumentalness", "Liveness", "Valence", "Tempo", "Time Signature"])
 			// make a string
-			let csv = ''; data.forEach(row => { csv += row.join(",") + "\n" })
+			let csv = "Track Name,Album Name,Artist Name(s),Release Date,Duration (ms),Popularity,Added By,Added At,Genres,Record Label,\
+				Danceability,Energy,Key,Loudness,Mode,Speechiness,Acousticness,Instrumentalness,Liveness,Valence,Tempo,Time Signature\n"
+			data.forEach(row => { csv += row.join(",") + "\n" })
 			return csv
 		})
 	}
