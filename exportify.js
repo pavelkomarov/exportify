@@ -1,5 +1,3 @@
-rateLimit = '<p><i class="fa fa-bolt" style="font-size: 50px; margin-bottom: 20px"></i></p><p>Exportify has encountered a <a target="_blank" href="https://developer.spotify.com/documentation/web-api/concepts/rate-limits">rate limiting</a> error, which can cause missing responses. The browser is actually caching those packets, so if you rerun the script (wait a minute and click the button again) a few times, it keeps filling in its missing pieces until it succeeds. Open developer tools with <tt>ctrl+shift+E</tt> and watch under the network tab to see this in action. Good luck.</p><br/>'
-
 // A collection of functions to create and send API queries
 const utils = {
 	// Query the spotify server (by just setting the url) to let it know we want a session. This is literally
@@ -24,7 +22,13 @@ const utils = {
 		let response = await fetch(url, { headers: { 'Authorization': 'Bearer ' + access_token} })
 		if (response.ok) { return response.json() }
 		else if (response.status == 401) { window.location = window.location.href.split('#')[0] } // Return to home page after auth token expiry
-		else if (response.status == 429) { if (!error.innerHTML.includes("fa-bolt")) { error.innerHTML += rateLimit } } // API Rate-limiting encountered (hopefully never happens with delays)
+		else if (response.status == 429) {
+			if (!error.innerHTML.includes("fa-bolt")) { error.innerHTML += '<p><i class="fa fa-bolt" style="font-size: 50px; margin-bottom: 20px">\
+				</i></p><p>Exportify has encountered <a target="_blank" href="https://developer.spotify.com/documentation/web-api/concepts/rate-limits">\
+				rate limiting</a> while querying endpoint ' + url.split('?')[0] + '!<br/>Don\'t worry: Automatic backoff is implemented, and your data is \
+				still downloading. But <a href="https://github.com/pavelkomarov/exportify/issues">I would be interested to hear about this.</a></p><br/>' }
+			return utils.apiCall(url, access_token, response.headers.get('Retry-After')*1000)
+		} // API Rate-limiting encountered (hopefully never happens with delays)
 		else { error.innerHTML = "The server returned an HTTP " + response.status + " response." } // the caller will fail
 	},
 
@@ -57,14 +61,13 @@ class PlaylistTable extends React.Component {
 
 		// Retrieve the list of all the user's playlists by querying the playlists endpoint.
 		// https://developer.spotify.com/documentation/web-api/reference/get-list-users-playlists
-		let offset = 0, nplaylists = null
+		let offset = 0, response = null
 		do {
-			let response = await utils.apiCall("https://api.spotify.com/v1/users/" + user.id + "/playlists?limit=50&offset=" + offset,
-				this.props.access_token, offset*2) // only one query every 100 ms
-			if (!nplaylists) { nplaylists = response.total} // Fish the total number of playlists out of the response.
+			response = await utils.apiCall("https://api.spotify.com/v1/me/playlists?limit=50&offset=" + offset,
+				this.props.access_token) // no need for a delay, because I'm awaiting each response, which builds in transit-time delay
 			playlists.push(response.items)
 			offset += 50 // playlists can be grabbed up to 50 at a time
-		} while (offset < nplaylists) // Go again if we haven't gotten them all yet.
+		} while (offset < response.total) // Go again if we haven't gotten them all yet.
 
 		//add info to this Component's state. Use setState() so render() gets called again.
 		this.setState({ playlists: playlists.flat() }) // flatten list of lists into just a list
@@ -176,7 +179,7 @@ let PlaylistExporter = {
 
 	// This is where the magic happens. The access token gives us permission to query this info from Spotify, and the
 	// playlist object gives us all the information we need to start asking for songs.
-	csvData(access_token, playlist) {
+	async csvData(access_token, playlist) {
 		let increment = playlist.name == "Liked Songs" ? 50 : 100 // Can max call for only 50 tracks at a time vs 100 for playlists
 
 		// Make asynchronous API calls for 100 songs at a time, and put the results (all Promises) in a list.
@@ -211,7 +214,7 @@ let PlaylistExporter = {
 			artist_ids = Array.from(artist_ids) // Make groups of 50 artists, to all be queried together
 			let artist_chunks = []; while (artist_ids.length) { artist_chunks.push(artist_ids.splice(0, 50)) }
 			let artists_promises = artist_chunks.map((chunk_ids, i) => utils.apiCall(
-				'https://api.spotify.com/v1/artists?ids='+chunk_ids.join(','), access_token, 100*i))
+				'https://api.spotify.com/v1/artists?ids='+chunk_ids.join(','), access_token, 100*i)) // volley of traffic, requests staggered by 100ms
 			return Promise.all(artists_promises).then(responses => {
 				let artist_genres = {} // build a dictionary, rather than a table
 				responses.forEach(response => response.artists.forEach(
