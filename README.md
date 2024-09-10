@@ -12,6 +12,7 @@ This is a hard fork of [the original Exportify repo](https://github.com/watsonbo
 
 Track data is exported in [CSV](http://en.wikipedia.org/wiki/Comma-separated_values) format with the following fields:
 
+- [Track ID](https://developer.spotify.com/documentation/web-api/concepts/spotify-uris-ids)
 - Track Name
 - Album Name
 - Artist Name(s)

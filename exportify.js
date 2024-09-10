@@ -241,7 +241,7 @@ let PlaylistExporter = {
 		let features_promise = Promise.all([data_promise, genre_promise, album_promise]).then(values => {
 			let data = values[0]
 			let songs_promises = data.map((chunk, i) => { // remember data is an array of arrays, each subarray 100 tracks
-				let ids = chunk.map(song => song.shift()).join(','); // the id lives in the first position; throw away once grabbed
+				let ids = chunk.map(song => song[0]).join(','); // the id lives in the first position
 				return utils.apiCall('https://api.spotify.com/v1/audio-features?ids='+ids , access_token, 100*i);
 			})
 			return Promise.all(songs_promises).then(responses => {
@@ -272,7 +272,7 @@ let PlaylistExporter = {
 			features = features.flat() // get rid of the batch dimension (only 100 songs per call)
 			data.forEach((row, i) => features[i]?.forEach(feat => row.push(feat)))
 			// make a string
-			let csv = "Track Name,Album Name,Artist Name(s),Release Date,Duration (ms),Popularity,Added By,Added At,Genres,Record Label,\
+			let csv = "Track ID,Track Name,Album Name,Artist Name(s),Release Date,Duration (ms),Popularity,Added By,Added At,Genres,Record Label,\
 				Danceability,Energy,Key,Loudness,Mode,Speechiness,Acousticness,Instrumentalness,Liveness,Valence,Tempo,Time Signature\n"
 			data.forEach(row => { csv += row.join(",") + "\n" })
 			return csv
