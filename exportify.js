@@ -261,8 +261,8 @@ let PlaylistExporter = {
 			data = data.flat() // get rid of the batch dimension (only 100 songs per call)
 			data.forEach(row => {
 				// add genres
-				let artist_ids = row.shift().slice(1, -1).split(',') // strip the quotes from artist ids, and toss; user doesn't need to see ids
-				let deduplicated_genres = new Set(artist_ids.map(a => artist_genres[a]).join(",").split(",")) // in case multiple artists
+				let artist_ids = row.shift()?.slice(1, -1).split(',') // strip the quotes from artist ids, and toss; user doesn't need to see ids
+				let deduplicated_genres = new Set(artist_ids?.map(a => artist_genres[a]).join(",").split(",")) // in case multiple artists
 				row.push('"'+Array.from(deduplicated_genres).filter(x => x != "").join(",")+'"') // remove empty strings
 				// add album details
 				let album_id = row.shift()
