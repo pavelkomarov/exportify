@@ -200,7 +200,7 @@ let PlaylistExporter = {
 					if (song.track?.album && song.track.album.id) { album_ids.add(song.track.album.id) }
 					// Multiple, comma-separated artists can throw off csv, so surround with "". Same for track and album names,
 					// which may contain commas and even quotation marks! Treat with care. Null checking with question marks!
-					return [song.track?.id, '"'+song.track?.artists?.map(artist => { return artist ? artist.id : null }).join(',')+'"', song.track?.album?.id,
+					return ['"'+song.track?.artists?.map(artist => { return artist ? artist.id : null }).join(',')+'"', song.track?.album?.id, song.track?.id,
 						'"'+song.track?.name?.replace(/"/g,'')+'"', '"'+song.track?.album?.name?.replace(/"/g,'')+'"',
 						'"'+song.track?.artists?.map(artist => { return artist ? artist.name : null}).join(',')+'"',
 						song.track?.album?.release_date, song.track?.duration_ms, song.track?.popularity, song.added_by?.id, song.added_at];
@@ -241,7 +241,7 @@ let PlaylistExporter = {
 		let features_promise = Promise.all([data_promise, genre_promise, album_promise]).then(values => {
 			let data = values[0]
 			let songs_promises = data.map((chunk, i) => { // remember data is an array of arrays, each subarray 100 tracks
-				let ids = chunk.map(song => song[0]).join(','); // the id lives in the first position
+				let ids = chunk.map(song => song[2]).join(','); // the id lives in the third position
 				return utils.apiCall('https://api.spotify.com/v1/audio-features?ids='+ids , access_token, 100*i);
 			})
 			return Promise.all(songs_promises).then(responses => {
