@@ -66,7 +66,7 @@ class PlaylistTable extends React.Component {
 		playlists.push(response.items)
 		let requests = []
 		for (let offset = 50; offset < response.total; offset += 50) {
-			requests.push(utils.apiCall("https://api.spotify.com/v1/me/playlists?limit=50&offset=" + offset, this.props.access_token, 2*offset))
+			requests.push(utils.apiCall("https://api.spotify.com/v1/me/playlists?limit=50&offset=" + offset, this.props.access_token, ((offset-50)/50)*100))
 		}
 		await Promise.all(requests).then(responses => responses.map(response => playlists.push(response.items)))
 
@@ -186,7 +186,7 @@ let PlaylistExporter = {
 		let requests = []
 		for (let offset = 0; offset < playlist.tracks.total; offset += increment) {
 			requests.push(utils.apiCall(playlist.tracks.href + '?offset=' + offset + '&limit=' + increment, access_token,
-				~~(offset/increment)*100)) // ~~(a/b) accomplishes integer division. I'm spacing requests by 100ms regardless of increment.
+				(offset/increment)*100)) // I'm spacing requests by 100ms regardless of increment.
 		}
 		// "returns a single Promise that resolves when all of the promises passed as an iterable have resolved"
 		// https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Promise/all
