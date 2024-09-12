@@ -59,19 +59,19 @@ class PlaylistTable extends React.Component {
 			tracks: {total: library.total, href: "https://api.spotify.com/v1/me/tracks"}}
 		let playlists = [[liked_songs]] // double list so .flat() flattens everything right later
 
-		// Retrieve the list of all the user's playlists by querying the playlists endpoint.
+		// Compose a list of all the user's playlists by querying the playlists endpoint. Their total number of playlists
+		// needs to be garnered from a response, so await the first response, then send a volley of requests to get the rest.
 		// https://developer.spotify.com/documentation/web-api/reference/get-list-users-playlists
-		let offset = 0, response = null
-		do {
-			response = await utils.apiCall("https://api.spotify.com/v1/me/playlists?limit=50&offset=" + offset,
-				this.props.access_token) // no need for a delay, because I'm awaiting each response, which builds in transit-time delay
-			playlists.push(response.items)
-			offset += 50 // playlists can be grabbed up to 50 at a time
-		} while (offset < response.total) // Go again if we haven't gotten them all yet.
+		let response = await utils.apiCall("https://api.spotify.com/v1/me/playlists?limit=50&offset=0", this.props.access_token)
+		playlists.push(response.items)
+		let requests = []
+		for (let offset = 50; offset < response.total; offset += 50) {
+			requests.push(utils.apiCall("https://api.spotify.com/v1/me/playlists?limit=50&offset=" + offset, this.props.access_token, 100*offset))
+		}
+		await Promise.all(requests).then(responses => responses.map(response => playlists.push(response.items)))
 
 		//add info to this Component's state. Use setState() so render() gets called again.
 		this.setState({ playlists: playlists.flat() }) // flatten list of lists into just a list
-
 		subtitle.textContent = this.state.playlists.length + ' playlists\n'; // directly reference an HTML element by id
 	}
 
