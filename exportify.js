@@ -66,7 +66,7 @@ class PlaylistTable extends React.Component {
 		playlists.push(response.items)
 		let requests = []
 		for (let offset = 50; offset < response.total; offset += 50) {
-			requests.push(utils.apiCall("https://api.spotify.com/v1/me/playlists?limit=50&offset=" + offset, this.props.access_token, 100*offset))
+			requests.push(utils.apiCall("https://api.spotify.com/v1/me/playlists?limit=50&offset=" + offset, this.props.access_token, 2*offset))
 		}
 		await Promise.all(requests).then(responses => responses.map(response => playlists.push(response.items)))
 
