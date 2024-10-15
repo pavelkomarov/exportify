@@ -3,31 +3,18 @@
   text-align: center;
 }
 
-#loginButton {
-  margin-top: 20px;
-}
-
-#rateLimitMessage {
-  text-align: center;
-}
+#loginButton { margin-top: 20px; }
 
 h1 a { color: black; }
 h1 a:hover { color: black; text-decoration: none; }
 
-nav.paginator:nth-child(1) {
-  margin-top: -74px;
-}
-
-table {
-  float: left;
-}
+table { float: left; }
 
 @keyframes spinner {
   to {transform: rotate(360deg);}
 }
 
 .spinner:before {
-  content: 'Loading…';
   position: absolute;
   left: 50%;
   width: 100px;
@@ -43,4 +30,3 @@ table {
   border-top-color: rgba(130, 130, 130, 1);
   animation: spinner 1s linear infinite;
 }
-
