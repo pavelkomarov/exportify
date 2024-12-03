@@ -272,8 +272,7 @@ let PlaylistExporter = {
 			features = features.flat() // get rid of the batch dimension (only 100 songs per call)
 			data.forEach((row, i) => features[i]?.forEach(feat => row.push(feat)))
 			// make a string
-			let csv = "Track ID,Track Name,Album Name,Artist Name(s),Release Date,Duration (ms),Popularity,Added By,Added At,Genres,Record Label,\
-				Danceability,Energy,Key,Loudness,Mode,Speechiness,Acousticness,Instrumentalness,Liveness,Valence,Tempo,Time Signature\n"
+			let csv = "Track ID,Track Name,Album Name,Artist Name(s),Release Date,Duration (ms),Popularity,Added By,Added At,Genres,Record Label,Danceability,Energy,Key,Loudness,Mode,Speechiness,Acousticness,Instrumentalness,Liveness,Valence,Tempo,Time Signature\n"
 			data.forEach(row => { csv += row.join(",") + "\n" })
 			return csv
 		})
