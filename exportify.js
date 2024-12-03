@@ -202,7 +202,7 @@ let PlaylistExporter = {
 					// which may contain commas and even quotation marks! Treat with care. Null checking with question marks!
 					return ['"'+song.track?.artists?.map(artist => { return artist ? artist.id : null }).join(',')+'"', song.track?.album?.id, song.track?.id,
 						'"'+song.track?.name?.replace(/"/g,'')+'"', '"'+song.track?.album?.name?.replace(/"/g,'')+'"',
-						'"'+song.track?.artists?.map(artist => { return artist ? artist.name : null}).join(',')+'"',
+						'"'+song.track?.artists?.map(artist => { return artist ? artist.name?.replace(/"/g,'') : null}).join(',')+'"',
 						song.track?.album?.release_date, song.track?.duration_ms, song.track?.popularity, song.added_by?.id, song.added_at];
 				})
 			})
