@@ -51,7 +51,7 @@ class PlaylistTable extends React.Component {
 	// https://stackoverflow.com/questions/43431550/how-can-i-invoke-asynchronous-code-within-a-constructor
 	async init() {
 		let user = await utils.apiCall("https://api.spotify.com/v1/me", this.props.access_token)
-		let library = await utils.apiCall("https://api.spotify.com/v1/me/tracks?offset=0&limit=1", this.props.access_token)
+		let library = await utils.apiCall("https://api.spotify.com/v1/me/tracks?offset=0&limit=50", this.props.access_token)
 
 		// fake a playlist-like structure for the liked songs, so it plays well with the rest of the code
 		let liked_songs = {name: "Liked Songs", external_urls: {spotify: "https://open.spotify.com/collection/tracks"},
