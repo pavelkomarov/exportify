@@ -2,5 +2,5 @@ matplotlib
 pandas
 scipy
 seaborn
-sklearn
+scikit-learn
 numpy
