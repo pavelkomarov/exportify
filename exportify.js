@@ -5,21 +5,46 @@ const utils = {
 	// being redirected to the original website.
 	// https://developer.spotify.com/documentation/web-api/concepts/authorization
 	// https://developer.spotify.com/documentation/web-api/concepts/scopes
-	authorize() { // This is bound to the login button in the HTML and gets called when the login button is clicked.
+	async authorize() { // This is bound to the login button in the HTML and gets called when the login button is clicked.
+
+		// attempting to follow the new flow, which is complicated: https://developer.spotify.com/documentation/web-api/tutorials/code-pkce-flow
+
+		// generate a random string as the "Code Verifier"
+		const generateRandomString = (length) => {
+			const possible = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+			const values = crypto.getRandomValues(new Uint8Array(length));
+			return values.reduce((acc, x) => acc + possible[x % possible.length], "");
+		}
+
+		const codeVerifier = generateRandomString(64);
+		console.log("codeVerifier", codeVerifier)
+		localStorage.setItem('code_verifier', codeVerifier)
+
+		// Code Challenge
+		const sha256base64 = async (plain) => {
+			const encoder = new TextEncoder()
+			const data = encoder.encode(plain)
+			const hashed = await crypto.subtle.digest('SHA-256', data)
+			return btoa(String.fromCharCode(...new Uint8Array(hashed))).replace(/=/g, '').replace(/\+/g, '-').replace(/\//g, '_');
+		}
+
+		const codeChallenge = await sha256base64(codeVerifier)
+		console.log("codeChallenge", codeChallenge)
+
 		window.location = "https://accounts.spotify.com/authorize" +
 			"?client_id=d99b082b01d74d61a100c9a0e056380b" +
 			"&redirect_uri=" + encodeURIComponent([location.protocol, '//', location.host, location.pathname].join('')) +
 			"&scope=playlist-read-private%20playlist-read-collaborative%20user-library-read" + // access to particular scopes of info defined here
-			"&response_type=token"
+			"&response_type=code&code_challenge_method=S256&code_challenge=" + codeChallenge;
 	},
 
 	// Make an asynchronous call to the server. Promises are *weird*. Careful here! You have to call .json() on the
 	// Promise returned by the fetch to get a second Promise that has the actual data in it!
 	// https://developer.mozilla.org/en-US/docs/Web/API/Fetch_API/Using_Fetch
 	// https://eloquentjavascript.net/11_async.html
-	async apiCall(url, access_token, delay=0) {
+	async apiCall(url, delay=0) {
 		await new Promise(r => setTimeout(r, delay)) // JavaScript equivalent of sleep(delay), to stay under rate limits ;)
-		let response = await fetch(url, { headers: { 'Authorization': 'Bearer ' + access_token} })
+		let response = await fetch(url, { headers: { 'Authorization': 'Bearer ' + localStorage.getItem('access_token')} })
 		if (response.ok) { return response.json() }
 		else if (response.status == 401) { window.location = window.location.href.split('#')[0] } // Return to home page after auth token expiry
 		else if (response.status == 429) {
@@ -27,7 +52,7 @@ const utils = {
 				</i></p><p>Exportify has encountered <a target="_blank" href="https://developer.spotify.com/documentation/web-api/concepts/rate-limits">\
 				rate limiting</a> while querying endpoint ' + url.split('?')[0] + '!<br/>Don\'t worry: Automatic backoff is implemented, and your data is \
 				still downloading. But <a href="https://github.com/pavelkomarov/exportify/issues">I would be interested to hear about this.</a></p><br/>' }
-			return utils.apiCall(url, access_token, response.headers.get('Retry-After')*1000)
+			return utils.apiCall(url, localStorage.getItem('access_token'), response.headers.get('Retry-After')*1000)
 		} // API Rate-limiting encountered (hopefully never happens with delays)
 		else { error.innerHTML = "The server returned an HTTP " + response.status + " response." } // the caller will fail
 	},
@@ -50,8 +75,8 @@ class PlaylistTable extends React.Component {
 	// Solve this with a separate function that initializes object data. Call it from render().
 	// https://stackoverflow.com/questions/43431550/how-can-i-invoke-asynchronous-code-within-a-constructor
 	async init() {
-		let user = await utils.apiCall("https://api.spotify.com/v1/me", this.props.access_token)
-		let library = await utils.apiCall("https://api.spotify.com/v1/me/tracks?offset=0&limit=1", this.props.access_token)
+		let user = await utils.apiCall("https://api.spotify.com/v1/me")
+		let library = await utils.apiCall("https://api.spotify.com/v1/me/tracks?offset=0&limit=1")
 
 		// fake a playlist-like structure for the liked songs, so it plays well with the rest of the code
 		let liked_songs = {name: "Liked Songs", external_urls: {spotify: "https://open.spotify.com/collection/tracks"},
@@ -62,11 +87,11 @@ class PlaylistTable extends React.Component {
 		// Compose a list of all the user's playlists by querying the playlists endpoint. Their total number of playlists
 		// needs to be garnered from a response, so await the first response, then send a volley of requests to get the rest.
 		// https://developer.spotify.com/documentation/web-api/reference/get-list-users-playlists
-		let response = await utils.apiCall("https://api.spotify.com/v1/me/playlists?limit=50&offset=0", this.props.access_token)
+		let response = await utils.apiCall("https://api.spotify.com/v1/me/playlists?limit=50&offset=0")
 		playlists.push(response.items)
 		let requests = []
 		for (let offset = 50; offset < response.total; offset += 50) {
-			requests.push(utils.apiCall("https://api.spotify.com/v1/me/playlists?limit=50&offset=" + offset, this.props.access_token, 2*offset-100))
+			requests.push(utils.apiCall("https://api.spotify.com/v1/me/playlists?limit=50&offset=" + offset, 2*offset-100))
 		}
 		await Promise.all(requests).then(responses => responses.map(response => playlists.push(response.items)))
 
@@ -94,8 +119,8 @@ class PlaylistTable extends React.Component {
 				column == "Tracks" ? b.tracks.total - a.tracks.total : field(b).localeCompare(field(a))) }) // for string columns, use something fancier to handle capitals and such
 	}
 
-	// createElement is a legacy API https://react.dev/reference/react/createElement, but it's unclear what the
-	// recommendation is to modernize https://stackoverflow.com/questions/78433001/why-is-createelement-a-part-of-the-legacy-api
+	// createElement is a legacy API https://react.dev/reference/react/createElement, but I like it better than JSX; it's less verbose
+	// https://stackoverflow.com/questions/78433001/why-is-createelement-a-part-of-the-legacy-api
 	render() {
 		if (this.state?.playlists.length > 0) {
 			return React.createElement("div", { id: "playlists" },
@@ -112,7 +137,7 @@ class PlaylistTable extends React.Component {
 								React.createElement("i", { className: "fa fa-fw fa-sort", style: { color: '#C0C0C0' }, id: "sortByTracks", onClick: () => this.sortRows("Tracks")} )),
 							React.createElement("th", { className: "text-right"},
 								React.createElement("button", { className: "btn btn-default btn-xs", type: "submit", id: "exportAll",
-									onClick: () => PlaylistExporter.exportAll(this.props.access_token, this.state.playlists) },
+									onClick: () => PlaylistExporter.exportAll(this.state.playlists) },
 									React.createElement("i", { className: "fa fa-file-archive-o"}), " Export All")))),
 					//table body
 					React.createElement("tbody", null,
@@ -124,7 +149,7 @@ class PlaylistTable extends React.Component {
 								React.createElement("td", null, React.createElement("a", { href: playlist.owner.external_urls.spotify }, playlist.owner.id)),
 								React.createElement("td", null, playlist.tracks.total),
 								React.createElement("td", { className: "text-right" },
-									React.createElement("button", { className: "btn btn-default btn-xs btn-success", id: "export" + i, onClick: () => PlaylistExporter.export(this.props.access_token, this.state.playlists[i], i) },
+									React.createElement("button", { className: "btn btn-default btn-xs btn-success", id: "export" + i, onClick: () => PlaylistExporter.export(this.state.playlists[i], i) },
 										React.createElement("i", { className: "fa fa-download" }) /* download icon */, " Export")))))))
 		} else {
 			this.init()
@@ -137,10 +162,10 @@ class PlaylistTable extends React.Component {
 let PlaylistExporter = {
 	// Take the access token string and playlist object, generate a csv from it, and when that data is resolved and
 	// returned, save to a file.
-	async export(access_token, playlist, row) {
+	async export(playlist, row) {
 		document.getElementById("export"+row).innerHTML = '<i class="fa fa-circle-o-notch fa-spin"></i> Exporting' // spinner on button
 		try {
-			let csv = await this.csvData(access_token, playlist)
+			let csv = await this.csvData(playlist)
 			saveAs(new Blob(["\uFEFF" + csv], { type: "text/csv;charset=utf-8" }), this.fileName(playlist) + ".csv")
 		} catch (e) {
 			error.innerHTML += "Couldn't export " + playlist.name + ". Encountered <tt>" + e + "</tt><br>" + e.stack +
@@ -151,14 +176,14 @@ let PlaylistExporter = {
 	},
 
 	// Handles exporting all playlist data as a zip file
-	async exportAll(access_token, playlists) {
+	async exportAll(playlists) {
 		exportAll.innerHTML = '<i class="fa fa-circle-o-notch fa-spin"></i> Exporting' // spinner on button
 		error.innerHTML = ""
 		let zip = new JSZip()
 
 		for (let playlist of playlists) {
 			try {
-				let csv = await this.csvData(access_token, playlist)
+				let csv = await this.csvData(playlist)
 				let fileName = this.fileName(playlist)
 				while (zip.file(fileName + ".csv")) { fileName += "_" } // Add underscores if the file already exists so playlists with duplicate names don't overwrite each other.
 				zip.file(fileName + ".csv", csv)
@@ -179,14 +204,13 @@ let PlaylistExporter = {
 
 	// This is where the magic happens. The access token gives us permission to query this info from Spotify, and the
 	// playlist object gives us all the information we need to start asking for songs.
-	async csvData(access_token, playlist) {
+	async csvData(playlist) {
 		let increment = playlist.name == "Liked Songs" ? 50 : 100 // Can max call for only 50 tracks at a time vs 100 for playlists
 
 		// Make asynchronous API calls for 100 songs at a time, and put the results (all Promises) in a list.
 		let requests = []
 		for (let offset = 0; offset < playlist.tracks.total; offset += increment) {
-			requests.push(utils.apiCall(playlist.tracks.href + '?offset=' + offset + '&limit=' + increment, access_token,
-				(offset/increment)*100)) // I'm spacing requests by 100ms regardless of increment.
+			requests.push(utils.apiCall(playlist.tracks.href + '?offset=' + offset + '&limit=' + increment, (offset/increment)*100)) // I'm spacing requests by 100ms regardless of increment.
 		}
 		// "returns a single Promise that resolves when all of the promises passed as an iterable have resolved"
 		// https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Promise/all
@@ -214,7 +238,7 @@ let PlaylistExporter = {
 			artist_ids = Array.from(artist_ids) // Make groups of 50 artists, to all be queried together
 			let artist_chunks = []; while (artist_ids.length) { artist_chunks.push(artist_ids.splice(0, 50)) }
 			let artists_promises = artist_chunks.map((chunk_ids, i) => utils.apiCall(
-				'https://api.spotify.com/v1/artists?ids='+chunk_ids.join(','), access_token, 100*i)) // volley of traffic, requests staggered by 100ms
+				'https://api.spotify.com/v1/artists?ids='+chunk_ids.join(','), 100*i)) // volley of traffic, requests staggered by 100ms
 			return Promise.all(artists_promises).then(responses => {
 				let artist_genres = {} // build a dictionary, rather than a table
 				responses.forEach(response => response.artists.forEach(
@@ -228,7 +252,7 @@ let PlaylistExporter = {
 			album_ids = Array.from(album_ids) // chunk set of ids into 20s
 			let album_chunks = []; while (album_ids.length) { album_chunks.push(album_ids.splice(0, 20)) }
 			let album_promises = album_chunks.map((chunk_ids, i) => utils.apiCall(
-				'https://api.spotify.com/v1/albums?ids=' + chunk_ids.join(','), access_token, 120*i))
+				'https://api.spotify.com/v1/albums?ids=' + chunk_ids.join(','), 120*i))
 			return Promise.all(album_promises).then(responses => {
 				let record_labels = {} // analogous to genres
 				responses.forEach(response => response.albums.forEach(
@@ -242,7 +266,7 @@ let PlaylistExporter = {
 			let data = values[0]
 			let songs_promises = data.map((chunk, i) => { // remember data is an array of arrays, each subarray 100 tracks
 				let ids = chunk.map(song => song[2]).join(','); // the id lives in the third position
-				return utils.apiCall('https://api.spotify.com/v1/audio-features?ids='+ids , access_token, 100*i);
+				return utils.apiCall('https://api.spotify.com/v1/audio-features?ids='+ids, 100*i);
 			})
 			return Promise.all(songs_promises).then(responses => {
 				return responses.map(response => { // for each response
@@ -280,21 +304,41 @@ let PlaylistExporter = {
 }
 
 // runs when the page loads
-window.onload = () => {
-	let [root, hash] = window.location.href.split('#')
-	let dict = {}
-	if (hash) { // If there is any information in the URL, contained after a # and separated by &, parse it out
-		let params = hash.split('&')
-		for (let i = 0; i < params.length; i++) {
-			let [k, v] = params[i].split('=')
-			dict[k] = v
-		}
-	}
+window.onload = async () => {
+	console.log("localStorage", localStorage)
+	const urlParams = new URLSearchParams(window.location.search); // window.location.search returns everything after the ?
+	if (localStorage.getItem('access_token') == null) { console.log("whoa") }
+	console.log('access_token1', window.localStorage.getItem('access_token'))
+	console.log("code", urlParams.get('code'))
+	if (urlParams.get('code') && localStorage.getItem('access_token') == null) {
+		let code = urlParams.get('code');
 
-	if (dict.access_token) { // If we were just authorized and got a token, then the url will have &access_token= in it
+		const url = "https://accounts.spotify.com/api/token";
+		const payload = {method: 'POST', headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+			body: new URLSearchParams({
+				client_id: "d99b082b01d74d61a100c9a0e056380b",
+				grant_type: 'authorization_code', code,
+				redirect_uri: 'http://localhost:8000/',//encodeURIComponent([location.protocol, '//', location.host, location.pathname].join('')),
+				code_verifier: localStorage.getItem('code_verifier'),
+			}),
+		}
+
+		console.log("redirect_uri", [location.protocol, '//', location.host, location.pathname].join(''))
+
+		const body = await fetch(url, payload);
+		const response = await body.json();
+		console.log("body", body)
+		console.log("response", response)
+
+
+		console.log("access_token", response.access_token)
+		localStorage.setItem('access_token', response.access_token);
+
 		loginButton.style.display = 'none' // When logged in, make the login button invisible
 		logoutContainer.innerHTML = '<button id="logoutButton" class="btn btn-sm" onclick="utils.logout()">Log Out</button>' // Add a logout button by modifying the HTML
-		ReactDOM.render(React.createElement(PlaylistTable, { access_token: dict.access_token }), playlistsContainer) // Create table
-		window.location = root + "#playlists" // modify URL to something prettier and more informative
+		ReactDOM.render(React.createElement(PlaylistTable, null), playlistsContainer) // Create table and put it in the playlistsContainer
+		let root = [location.protocol, '//', location.host, location.pathname].join('')
+		console.log("root", root)		
+		//window.location = root + "#playlists" // modify URL to something prettier and more informative
 	}
 }
