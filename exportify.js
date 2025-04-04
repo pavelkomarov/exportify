@@ -11,17 +11,16 @@ const utils = {
 	// The auth code is finally sent in the response body to that latter request, instead of as a plaintext url param.
 	// https://developer.spotify.com/documentation/web-api/concepts/authorization
 	async authorize() { // This is bound to the login button in the HTML and gets called when the login button is clicked.
-		let alphanumeric = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
-		let code_verifier = crypto.getRandomValues(new Uint8Array(64)).reduce((acc, x) => acc + alphanumeric[x % alphanumeric.length], "");
-		let hashed = await crypto.subtle.digest('SHA-256', (new TextEncoder()).encode(code_verifier)); // some crypto methods are async
-		let code_challenge = btoa(String.fromCharCode(...new Uint8Array(hashed))).replace(/=/g, '').replace(/\+/g, '-').replace(/\//g, '_');
+		let alphanumeric = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789'
+		let code_verifier = crypto.getRandomValues(new Uint8Array(64)).reduce((acc, x) => acc + alphanumeric[x % alphanumeric.length], "")
+		let hashed = await crypto.subtle.digest('SHA-256', (new TextEncoder()).encode(code_verifier)) // some crypto methods are async
+		let code_challenge = btoa(String.fromCharCode(...new Uint8Array(hashed))).replace(/=/g, '').replace(/\+/g, '-').replace(/\//g, '_')
 
-		localStorage.setItem('code_verifier', code_verifier); // save the random string secret
-		window.location = "https://accounts.spotify.com/authorize" +
-			"?client_id=d99b082b01d74d61a100c9a0e056380b" +
-			"&redirect_uri=" + encodeURIComponent([location.protocol, '//', location.host, location.pathname].join('')) +
+		localStorage.setItem('code_verifier', code_verifier) // save the random string secret
+		location = "https://accounts.spotify.com/authorize?client_id=d99b082b01d74d61a100c9a0e056380b" +
+			"&redirect_uri=" + encodeURIComponent(location.origin + location.pathname) +
 			"&scope=playlist-read-private%20playlist-read-collaborative%20user-library-read" + // access to particular scopes of info defined here
-			"&response_type=code&code_challenge_method=S256&code_challenge=" + code_challenge;
+			"&response_type=code&code_challenge_method=S256&code_challenge=" + code_challenge
 	},
 
 	// Make an asynchronous call to the server. Promises are *weird*. Careful here! You have to call .json() on the
@@ -32,13 +31,13 @@ const utils = {
 		await new Promise(r => setTimeout(r, delay)) // JavaScript equivalent of sleep(delay), to stay under rate limits ;)
 		let response = await fetch(url, { headers: { 'Authorization': 'Bearer ' + localStorage.getItem('access_token')} })
 		if (response.ok) { return response.json() }
-		else if (response.status == 401) { window.location = window.location.href.split('#')[0] } // Return to home page after auth token expiry
+		else if (response.status == 401) { location = location.href.split('#')[0] } // Return to home page after auth token expiry
 		else if (response.status == 429) {
 			if (!error.innerHTML.includes("fa-bolt")) { error.innerHTML += '<p><i class="fa fa-bolt" style="font-size: 50px; margin-bottom: 20px">\
 				</i></p><p>Exportify has encountered <a target="_blank" href="https://developer.spotify.com/documentation/web-api/concepts/rate-limits">\
 				rate limiting</a> while querying endpoint ' + url.split('?')[0] + '!<br/>Don\'t worry: Automatic backoff is implemented, and your data is \
 				still downloading. But <a href="https://github.com/pavelkomarov/exportify/issues">I would be interested to hear about this.</a></p><br/>' }
-			return utils.apiCall(url, localStorage.getItem('access_token'), response.headers.get('Retry-After')*1000)
+			return utils.apiCall(url, response.headers.get('Retry-After')*1000)
 		} // API Rate-limiting encountered (hopefully never happens with delays)
 		else { error.innerHTML = "The server returned an HTTP " + response.status + " response." } // the caller will fail
 	},
@@ -47,8 +46,8 @@ const utils = {
 	// no way to redirect back to my home page. So open the logout page in a new tab, then redirect to the homepage after a
 	// second, which is almost always long enough for the logout request to go through.
 	logout() {
-		let logout = window.open("https://www.spotify.com/logout")
-		setTimeout(() => {logout.close(); window.location = [location.protocol, '//', location.host, location.pathname].join('')}, 1000)
+		let logout = open("https://www.spotify.com/logout")
+		setTimeout(() => {logout.close(); location = location.origin}, 1000)
 	}
 }
 
@@ -83,7 +82,7 @@ class PlaylistTable extends React.Component {
 
 		//add info to this Component's state. Use setState() so render() gets called again.
 		this.setState({ playlists: playlists.flat() }) // flatten list of lists into just a list
-		subtitle.textContent = this.state.playlists.length + ' playlists\n'; // directly reference an HTML element by id
+		subtitle.textContent = this.state.playlists.length + ' playlists\n' // directly reference an HTML element by id
 	}
 
 	// Make the table sortable
@@ -105,14 +104,14 @@ class PlaylistTable extends React.Component {
 				column == "Tracks" ? b.tracks.total - a.tracks.total : field(b).localeCompare(field(a))) }) // for string columns, use something fancier to handle capitals and such
 	}
 
-	// createElement is a legacy API https://react.dev/reference/react/createElement, but I like it better than JSX; it's less verbose
+	// createElement is a legacy API https://react.dev/reference/react/createElement, but I like it better than JSX at the moment
 	// https://stackoverflow.com/questions/78433001/why-is-createelement-a-part-of-the-legacy-api
 	render() {
 		if (this.state?.playlists.length > 0) {
 			return React.createElement("div", { id: "playlists" },
 				React.createElement("table", { className: "table table-hover" },
 					// table header
-					React.createElement("thead", null,
+					React.createElement("thead", null, // have to explicitly pass null because the children come as *args _after_ the second argument
 						React.createElement("tr", null,
 							React.createElement("th", { style: { width: "30px" }}),
 							React.createElement("th", null, "Name",
@@ -185,7 +184,7 @@ let PlaylistExporter = {
 
 	// take the playlist object and return an acceptable filename
 	fileName(playlist) {
-		return playlist.name.replace(/[^a-z0-9\- ]/gi, '').replace(/[ ]/gi, '_').toLowerCase(); // /.../gi is a Perl-style modifier, g for global, meaning all matches replaced, i for case-insensitive
+		return playlist.name.replace(/[^a-z0-9\- ]/gi, '').replace(/[ ]/gi, '_').toLowerCase() // /.../gi is a Perl-style modifier, g for global, meaning all matches replaced, i for case-insensitive
 	},
 
 	// This is where the magic happens. The access token gives us permission to query this info from Spotify, and the
@@ -213,7 +212,7 @@ let PlaylistExporter = {
 					return ['"'+song.track?.artists?.map(artist => { return artist ? artist.id : null }).join(',')+'"', song.track?.album?.id, song.track?.id,
 						'"'+song.track?.name?.replace(/"/g,'')+'"', '"'+song.track?.album?.name?.replace(/"/g,'')+'"',
 						'"'+song.track?.artists?.map(artist => { return artist ? artist.name?.replace(/"/g,'') : null}).join(',')+'"',
-						song.track?.album?.release_date, song.track?.duration_ms, song.track?.popularity, song.added_by?.id, song.added_at];
+						song.track?.album?.release_date, song.track?.duration_ms, song.track?.popularity, song.added_by?.id, song.added_at]
 				})
 			})
 		})
@@ -251,8 +250,8 @@ let PlaylistExporter = {
 		let features_promise = Promise.all([data_promise, genre_promise, album_promise]).then(values => {
 			let data = values[0]
 			let songs_promises = data.map((chunk, i) => { // remember data is an array of arrays, each subarray 100 tracks
-				let ids = chunk.map(song => song[2]).join(','); // the id lives in the third position
-				return utils.apiCall('https://api.spotify.com/v1/audio-features?ids='+ids, 100*i);
+				let ids = chunk.map(song => song[2]).join(',') // the id lives in the third position
+				return utils.apiCall('https://api.spotify.com/v1/audio-features?ids='+ids, 100*i)
 			})
 			return Promise.all(songs_promises).then(responses => {
 				return responses.map(response => { // for each response
@@ -290,38 +289,18 @@ let PlaylistExporter = {
 }
 
 // runs when the page loads
-window.onload = async () => {
-	let urlParams = new URLSearchParams(window.location.search); // window.location.search returns everything after the ?
-	console.log(urlParams)
-	if (localStorage.getItem('access_token') == null) { console.log("whoa") }
-	if (urlParams.get('code') && localStorage.getItem('access_token') == null) {
-		let code = urlParams.get('code');
+onload = async () => {
+	let code = new URLSearchParams(location.search).get('code') // try to snag a code out of the url, in case this is after authorize()
+	if (code) {
+		history.replaceState({}, '', '/') // get rid of the ugly code string from the browser bar
 
-		const url = "https://accounts.spotify.com/api/token";
-		const payload = {method: 'POST', headers: {'Content-Type': 'application/x-www-form-urlencoded'},
-			body: new URLSearchParams({
-				client_id: "d99b082b01d74d61a100c9a0e056380b",
-				grant_type: 'authorization_code', code,
-				redirect_uri: [location.protocol, '//', location.host, location.pathname].join(''),
-				code_verifier: localStorage.getItem('code_verifier'),
-			}),
-		}
-
-		console.log("redirect_uri", [location.protocol, '//', location.host, location.pathname].join(''))
-
-		const body = await fetch(url, payload);
-		const response = await body.json();
-		console.log("body", body)
-		console.log("response", response)
-
-		console.log("access_token", response.access_token)
-		localStorage.setItem('access_token', response.access_token);
+		let response = await fetch("https://accounts.spotify.com/api/token", { method: 'POST', headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+			body: new URLSearchParams({client_id: "d99b082b01d74d61a100c9a0e056380b", grant_type: 'authorization_code', code: code, redirect_uri: location.origin + location.pathname,
+				code_verifier: localStorage.getItem('code_verifier')}) }) // POST to get the access token, then fish it out of the response body
+		localStorage.setItem('access_token', (await response.json()).access_token) // https://stackoverflow.com/questions/59555534/why-is-json-asynchronous
 
 		loginButton.style.display = 'none' // When logged in, make the login button invisible
 		logoutContainer.innerHTML = '<button id="logoutButton" class="btn btn-sm" onclick="utils.logout()">Log Out</button>' // Add a logout button by modifying the HTML
-		ReactDOM.render(React.createElement(PlaylistTable, null), playlistsContainer) // Create table and put it in the playlistsContainer
-		let root = [location.protocol, '//', location.host, location.pathname].join('')
-		console.log("root", root)		
-		//window.location = root + "#playlists" // modify URL to something prettier and more informative
+		ReactDOM.render(React.createElement(PlaylistTable), playlistsContainer) // Create table and put it in the playlistsContainer	
 	}
 }
