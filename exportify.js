@@ -1,41 +1,27 @@
 // A collection of functions to create and send API queries
 const utils = {
-	// Query the spotify server (by just setting the url) to let it know we want a session. This is literally
-	// accomplished by navigating to this web address, where we may have to enter Spotify credentials, then
-	// being redirected to the original website.
+	// Send a request to the Spotify server to let it know we want a session. This is literally accomplished by navigating
+	// to a web address, which accomplishes a GET, with correct query params in tow. There the user may have to enter their
+	// Spotify credentials, after which they are redirected. Which client app wants access, which information exactly it wants
+	// access to (https://developer.spotify.com/documentation/web-api/concepts/scopes), where to redirect, etc. constitute the
+	// params. Since we now have to do https://developer.spotify.com/documentation/web-api/tutorials/code-pkce-flow, this
+	// accomplishes only the first phase. Essentially we generate a random secret then hash and encode it and send the hashed
+	// side (the "challenge") to the authorization server in the original GET. The server responds with a code, which we send
+	// back along with the secret (the "verifier") in a POST form, which proves the original request came from the same origin.
+	// The auth code is finally sent in the response body to that latter request, instead of as a plaintext url param.
 	// https://developer.spotify.com/documentation/web-api/concepts/authorization
-	// https://developer.spotify.com/documentation/web-api/concepts/scopes
 	async authorize() { // This is bound to the login button in the HTML and gets called when the login button is clicked.
+		let alphanumeric = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+		let code_verifier = crypto.getRandomValues(new Uint8Array(64)).reduce((acc, x) => acc + alphanumeric[x % alphanumeric.length], "");
+		let hashed = await crypto.subtle.digest('SHA-256', (new TextEncoder()).encode(code_verifier)); // some crypto methods are async
+		let code_challenge = btoa(String.fromCharCode(...new Uint8Array(hashed))).replace(/=/g, '').replace(/\+/g, '-').replace(/\//g, '_');
 
-		// attempting to follow the new flow, which is complicated: https://developer.spotify.com/documentation/web-api/tutorials/code-pkce-flow
-
-		// generate a random string as the "Code Verifier"
-		const generateRandomString = (length) => {
-			const possible = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
-			const values = crypto.getRandomValues(new Uint8Array(length));
-			return values.reduce((acc, x) => acc + possible[x % possible.length], "");
-		}
-
-		const codeVerifier = generateRandomString(64);
-		console.log("codeVerifier", codeVerifier)
-		localStorage.setItem('code_verifier', codeVerifier)
-
-		// Code Challenge
-		const sha256base64 = async (plain) => {
-			const encoder = new TextEncoder()
-			const data = encoder.encode(plain)
-			const hashed = await crypto.subtle.digest('SHA-256', data)
-			return btoa(String.fromCharCode(...new Uint8Array(hashed))).replace(/=/g, '').replace(/\+/g, '-').replace(/\//g, '_');
-		}
-
-		const codeChallenge = await sha256base64(codeVerifier)
-		console.log("codeChallenge", codeChallenge)
-
+		localStorage.setItem('code_verifier', code_verifier); // save the random string secret
 		window.location = "https://accounts.spotify.com/authorize" +
 			"?client_id=d99b082b01d74d61a100c9a0e056380b" +
 			"&redirect_uri=" + encodeURIComponent([location.protocol, '//', location.host, location.pathname].join('')) +
 			"&scope=playlist-read-private%20playlist-read-collaborative%20user-library-read" + // access to particular scopes of info defined here
-			"&response_type=code&code_challenge_method=S256&code_challenge=" + codeChallenge;
+			"&response_type=code&code_challenge_method=S256&code_challenge=" + code_challenge;
 	},
 
 	// Make an asynchronous call to the server. Promises are *weird*. Careful here! You have to call .json() on the
@@ -305,11 +291,9 @@ let PlaylistExporter = {
 
 // runs when the page loads
 window.onload = async () => {
-	console.log("localStorage", localStorage)
-	const urlParams = new URLSearchParams(window.location.search); // window.location.search returns everything after the ?
+	let urlParams = new URLSearchParams(window.location.search); // window.location.search returns everything after the ?
+	console.log(urlParams)
 	if (localStorage.getItem('access_token') == null) { console.log("whoa") }
-	console.log('access_token1', window.localStorage.getItem('access_token'))
-	console.log("code", urlParams.get('code'))
 	if (urlParams.get('code') && localStorage.getItem('access_token') == null) {
 		let code = urlParams.get('code');
 
@@ -318,7 +302,7 @@ window.onload = async () => {
 			body: new URLSearchParams({
 				client_id: "d99b082b01d74d61a100c9a0e056380b",
 				grant_type: 'authorization_code', code,
-				redirect_uri: 'http://localhost:8000/',//encodeURIComponent([location.protocol, '//', location.host, location.pathname].join('')),
+				redirect_uri: [location.protocol, '//', location.host, location.pathname].join(''),
 				code_verifier: localStorage.getItem('code_verifier'),
 			}),
 		}
@@ -329,7 +313,6 @@ window.onload = async () => {
 		const response = await body.json();
 		console.log("body", body)
 		console.log("response", response)
-
 
 		console.log("access_token", response.access_token)
 		localStorage.setItem('access_token', response.access_token);
