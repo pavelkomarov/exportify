@@ -298,7 +298,9 @@ onload = async () => {
 			body: new URLSearchParams({client_id: "d99b082b01d74d61a100c9a0e056380b", grant_type: 'authorization_code', code: code, redirect_uri: location.origin + location.pathname,
 				code_verifier: localStorage.getItem('code_verifier')}) }) // POST to get the access token, then fish it out of the response body
 		localStorage.setItem('access_token', (await response.json()).access_token) // https://stackoverflow.com/questions/59555534/why-is-json-asynchronous
-
+		localStorage.setItem('access_token_timestamp', Date.now())
+	}
+	if (localStorage.getItem('access_token') && Date.now() - localStorage.getItem('access_token_timestamp') < 3600000) {
 		loginButton.style.display = 'none' // When logged in, make the login button invisible
 		logoutContainer.innerHTML = '<button id="logoutButton" class="btn btn-sm" onclick="utils.logout()">Log Out</button>' // Add a logout button by modifying the HTML
 		ReactDOM.render(React.createElement(PlaylistTable), playlistsContainer) // Create table and put it in the playlistsContainer	
