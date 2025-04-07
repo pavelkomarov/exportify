@@ -46,6 +46,7 @@ const utils = {
 	// no way to redirect back to my home page. So open the logout page in a new tab, then redirect to the homepage after a
 	// second, which is almost always long enough for the logout request to go through.
 	logout() {
+		localStorage.clear() // otherwise when the page is reloaded it still just finds and uses the access_token
 		let logout = open("https://www.spotify.com/logout")
 		setTimeout(() => {logout.close(); location = location.origin}, 1000)
 	}
