@@ -49,13 +49,17 @@ Run the [Jupyter Notebook](https://github.com/pavelkomarov/exportify/blob/master
 
 ### Development
 
-Developers wishing to make changes to Exportify should use a local web server. For example, using Python (in the Exportify repo dir):
+Most of the interesting logic that communicates with the Spotify Web API happens in Javascript in `exportify.js`. I've left many detailed code comments and tried to structure it as rationally as I can, so take a look. The webpage skin and a few action bindings are defined in `index.html`.
+
+To experiment with changes, run a local web server. For example, using Python (in the Exportify repo dir):
 
 ```bash
 python3 -m http.server
 ```
 
-Then open [http://localhost:8000](http://localhost:8000).
+Then open [http://localhost:8000](http://localhost:8000). The Javascript can be invoked by interacting with this locally-served webpage.
+
+Data science stuff is written with Python in `taste_analysis.ipynb`, which you can run with `python3 -m notebook`, then navigating to [http://localhost:8888](http://localhost:8888).
 
 ### Contributing
 
