@@ -2,7 +2,7 @@
 [![Build Status](https://github.com/pavelkomarov/exportify/actions/workflows/deploy.yml/badge.svg)](https://github.com/pavelkomarov/exportify/actions)
 [![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/pavelkomarov/exportify/master)
 
-Export your Spotify playlists for analysis or just safekeeping: [exportify.net](https://exportify.net)
+Export your Spotify playlist metadata to CSV, for analysis or just safekeeping: [exportify.net](https://exportify.net)
 
 <a href="https://pavelkomarov.com/exportify"><img src="screenshot.png"/></a>
 
