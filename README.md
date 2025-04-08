@@ -2,15 +2,15 @@
 [![Build Status](https://github.com/pavelkomarov/exportify/actions/workflows/deploy.yml/badge.svg)](https://github.com/pavelkomarov/exportify/actions)
 [![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/pavelkomarov/exportify/master)
 
-Export your Spotify playlist metadata to CSV, for analysis or just safekeeping: [exportify.net](https://exportify.net)
+Export your Spotify playlist metadata for analysis or just safekeeping: [exportify.net](https://exportify.net)
 
 <a href="https://pavelkomarov.com/exportify"><img src="screenshot.png"/></a>
 
 ### Export Format
 
-Track data is exported in [CSV](http://en.wikipedia.org/wiki/Comma-separated_values) format with the following fields:
+Playlist data is exported in [CSV](http://en.wikipedia.org/wiki/Comma-separated_values) format with the following fields:
 
-- [Track ID](https://developer.spotify.com/documentation/web-api/concepts/spotify-uris-ids)
+- [Track URI](https://developer.spotify.com/documentation/web-api/concepts/spotify-uris-ids)
 - Track Name
 - Album Name
 - Artist Name(s)
@@ -49,13 +49,17 @@ Run the [Jupyter Notebook](https://github.com/pavelkomarov/exportify/blob/master
 
 ### Development
 
-Developers wishing to make changes to Exportify should use a local web server. For example, using Python (in the Exportify repo dir):
+Most of the interesting logic that communicates with the Spotify Web API happens in Javascript in `exportify.js`. I've left many detailed code comments and tried to structure it as rationally as I can, so take a look. The webpage skin and a few action bindings are defined in `index.html`.
+
+To experiment with changes, run a local web server. For example, using Python (in the Exportify repo dir):
 
 ```bash
 python3 -m http.server
 ```
 
-Then open [http://localhost:8000](http://localhost:8000).
+Then open [http://localhost:8000](http://localhost:8000). The Javascript can be invoked by interacting with this locally-served webpage.
+
+Data science stuff is written with Python in `taste_analysis.ipynb`, which you can run with `python3 -m notebook`, then navigating to [http://localhost:8888](http://localhost:8888).
 
 ### Contributing
 
