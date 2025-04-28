@@ -256,7 +256,7 @@ let PlaylistExporter = {
 			})
 			return Promise.all(songs_promises).then(responses => {
 				return responses.map(response => { // for each response
-					return response.audio_features.map(feats => {
+					return response.audio_features?.map(feats => {
 						return [feats?.danceability, feats?.energy, feats?.key, feats?.loudness, feats?.mode,
 							feats?.speechiness, feats?.acousticness, feats?.instrumentalness, feats?.liveness, feats?.valence,
 							feats?.tempo, feats?.time_signature] // Safety-checking question marks
