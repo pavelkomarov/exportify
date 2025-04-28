@@ -251,7 +251,7 @@ let PlaylistExporter = {
 		let features_promise = Promise.all([data_promise, genre_promise, album_promise]).then(values => {
 			let data = values[0]
 			let songs_promises = data.map((chunk, i) => { // remember data is an array of arrays, each subarray 100 tracks
-				let ids = chunk.map(song => song[2].split(':')[2]).join(',') // the id lives in the third position, at the end of spotify:track:id
+				let ids = chunk.map(song => song[2]?.split(':')[2]).join(',') // the id lives in the third position, at the end of spotify:track:id
 				return utils.apiCall('https://api.spotify.com/v1/audio-features?ids='+ids, 100*i)
 			})
 			return Promise.all(songs_promises).then(responses => {
