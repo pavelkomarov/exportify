@@ -85,7 +85,7 @@ class PlaylistTable extends React.Component {
 		await Promise.all(requests).then(responses => responses.map(response => playlists.push(response.items)))
 
 		//add info to this Component's state. Use setState() so render() gets called again.
-		this.setState({ playlists: playlists.flat() }) // flatten list of lists into just a list
+		this.setState({ playlists: playlists.flat(), format: "csv" }) // flatten list of lists into just a list
 		subtitle.textContent = this.state.playlists.length + ' playlists\n' // directly reference an HTML element by id
 	}
 
@@ -111,6 +111,11 @@ class PlaylistTable extends React.Component {
 		}) // for string columns, use something fancier to handle capitals and such
 	}
 
+	// change format state when selector changes
+	handleFormatChange = (e) => {
+		this.setState({ format: e.target.value })
+	}
+
 	// createElement is a legacy API https://react.dev/reference/react/createElement, but I like it better than JSX at the moment
 	// https://stackoverflow.com/questions/78433001/why-is-createelement-a-part-of-the-legacy-api
 	render() {
@@ -129,13 +134,13 @@ class PlaylistTable extends React.Component {
 								React.createElement("i", { className: "fa fa-fw fa-sort", style: { color: '#C0C0C0' }, id: "sortByTracks", onClick: () => this.sortRows("Tracks") })),
 							React.createElement("th", { className: "text-right", style: { textAlign: "right" } },
 								React.createElement("Label", { style: { margin: "0px 10px 0px 0px" } }, "Format: "),
-								React.createElement("select", { className: "btn btn-default btn-xs", style: { minHeight: "22px" } },
+								React.createElement("select", { onChange: this.handleFormatChange, name: "format", className: "btn btn-default btn-xs", style: { minHeight: "22px" } },
 									React.createElement("option", { value: "csv" }, "CSV"),
 									React.createElement("option", { value: "xspf" }, "XSPF"))),
 							React.createElement("th", { className: "text-right" },
 								React.createElement("button", {
 									className: "btn btn-default btn-xs", type: "submit", id: "exportAll",
-									onClick: () => PlaylistExporter.exportCSVAll(this.state.playlists)
+									onClick: () => PlaylistExporter.exportAll(this.state.playlists, this.state.format)
 								},
 									React.createElement("i", { className: "fa fa-file-archive-o" }), " Export All")))),
 					//table body
@@ -148,7 +153,7 @@ class PlaylistTable extends React.Component {
 								React.createElement("td", null, React.createElement("a", { href: playlist.owner.external_urls.spotify }, playlist.owner.id)),
 								React.createElement("td", null, playlist.tracks.total),
 								React.createElement("td", { className: "text-right", colspan: "2" },
-									React.createElement("button", { className: "btn btn-default btn-xs btn-success", id: "export" + i, onClick: () => PlaylistExporter.exportCSV(this.state.playlists[i], i) },
+									React.createElement("button", { className: "btn btn-default btn-xs btn-success", id: "export" + i, onClick: () => PlaylistExporter.export(this.state.playlists[i], i, this.state.format) },
 										React.createElement("i", { className: "fa fa-download" }) /* download icon */, " Export")))))))
 		} else {
 			this.init()
@@ -161,25 +166,52 @@ class PlaylistTable extends React.Component {
 let PlaylistExporter = {
 	// Take the access token string and playlist object, generate a csv from it, and when that data is resolved and
 	// returned, save to a file.
-	async exportCSV(playlist, row) {
+
+	async export(playlist, row, format) {
 		document.getElementById("export" + row).innerHTML = '<i class="fa fa-circle-o-notch fa-spin"></i> Exporting' // spinner on button
 		try {
-			let csv = await this.createCSV(playlist)
-			saveAs(new Blob(["\uFEFF" + csv], { type: "text/csv;charset=utf-8" }), this.fileName(playlist) + ".csv")
+			if (format == "csv") {
+				await this.exportCSV(playlist)
+			}
+			else {
+				// exportXSPF(playlist)
+				alert("XSPF export not yet implemented!")
+				return
+
+			}
 		} catch (e) {
 			error.innerHTML += "Couldn't export " + playlist.name + ". Encountered <tt>" + e + "</tt><br>" + e.stack +
 				'<br>Please <a href="https://github.com/pavelkomarov/exportify/issues">let us know</a>.'
 		} finally { // change back the export button's text
 			document.getElementById("export" + row).innerHTML = '<i class="fa fa-download"></i> Export'
 		}
+
 	},
 
-	// Handles exporting all playlist data as a zip file
-	async exportCSVAll(playlists) {
+	async exportCSV(playlist) {
+		let csv = await this.createCSV(playlist)
+		saveAs(new Blob(["\uFEFF" + csv], { type: "text/csv;charset=utf-8" }), this.fileName(playlist) + ".csv")
+	},
+
+	async exportAll(playlists, format) {
 		exportAll.innerHTML = '<i class="fa fa-circle-o-notch fa-spin"></i> Exporting' // spinner on button
 		error.innerHTML = ""
 		let zip = new JSZip()
+		if (format == "csv") {
+			await this.exportCSVAll(playlists, zip)
+		}
+		else {
+			// await this.exportXSPFAll(playlists, zip)
+			alert("XSPF export not yet implemented!")
+			return
+		}
+		exportAll.innerHTML = '<i class="fa fa-file-archive-o"></i> Export All' // change back button text
+		saveAs(zip.generate({ type: "blob" }), "spotify_playlists.zip")
 
+	},
+
+	// Handles exporting all playlist data as a zip file
+	async exportCSVAll(playlists, zip) {
 		for (let playlist of playlists) {
 			try {
 				let csv = await this.createCSV(playlist)
@@ -192,8 +224,7 @@ let PlaylistExporter = {
 					"The others are still being zipped.<br/>"
 			}
 		}
-		exportAll.innerHTML = '<i class="fa fa-file-archive-o"></i> Export All' // change back button text
-		saveAs(zip.generate({ type: "blob" }), "spotify_playlists.zip")
+		return
 	},
 
 	// take the playlist object and return an acceptable filename
