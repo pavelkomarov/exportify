@@ -127,6 +127,11 @@ class PlaylistTable extends React.Component {
 								React.createElement("i", { className: "fa fa-fw fa-sort", style: { color: '#C0C0C0' }, id: "sortByOwner", onClick: () => this.sortRows("Owner") })),
 							React.createElement("th", { style: { minWidth: "100px" } }, "Tracks",
 								React.createElement("i", { className: "fa fa-fw fa-sort", style: { color: '#C0C0C0' }, id: "sortByTracks", onClick: () => this.sortRows("Tracks") })),
+							React.createElement("th", { className: "text-right", style: { textAlign: "right" } },
+								React.createElement("Label", { style: { margin: "0px 10px 0px 0px" } }, "Format: "),
+								React.createElement("select", { className: "btn btn-default btn-xs", style: { minHeight: "22px" } },
+									React.createElement("option", { value: "csv" }, "CSV"),
+									React.createElement("option", { value: "xspf" }, "XSPF"))),
 							React.createElement("th", { className: "text-right" },
 								React.createElement("button", {
 									className: "btn btn-default btn-xs", type: "submit", id: "exportAll",
@@ -142,7 +147,7 @@ class PlaylistTable extends React.Component {
 								React.createElement("td", null, React.createElement("a", { href: playlist.external_urls.spotify }, playlist.name)),
 								React.createElement("td", null, React.createElement("a", { href: playlist.owner.external_urls.spotify }, playlist.owner.id)),
 								React.createElement("td", null, playlist.tracks.total),
-								React.createElement("td", { className: "text-right" },
+								React.createElement("td", { className: "text-right", colspan: "2" },
 									React.createElement("button", { className: "btn btn-default btn-xs btn-success", id: "export" + i, onClick: () => PlaylistExporter.exportCSV(this.state.playlists[i], i) },
 										React.createElement("i", { className: "fa fa-download" }) /* download icon */, " Export")))))))
 		} else {
