@@ -170,14 +170,13 @@ let PlaylistExporter = {
 	async export(playlist, row, format) {
 		document.getElementById("export" + row).innerHTML = '<i class="fa fa-circle-o-notch fa-spin"></i> Exporting' // spinner on button
 		try {
-			if (format == "csv") {
-				await this.exportCSV(playlist)
-			}
-			else {
-				// exportXSPF(playlist)
-				alert("XSPF export not yet implemented!")
-				return
-
+			switch (format) {
+				case "csv":
+					await this.exportCSV(playlist)
+					break
+				case "xspf":
+					await this.exportXSPF(playlist)
+					break
 			}
 		} catch (e) {
 			error.innerHTML += "Couldn't export " + playlist.name + ". Encountered <tt>" + e + "</tt><br>" + e.stack +
@@ -186,6 +185,11 @@ let PlaylistExporter = {
 			document.getElementById("export" + row).innerHTML = '<i class="fa fa-download"></i> Export'
 		}
 
+	},
+
+	async exportXSPF(playlist) {
+		let xspf = await this.createXSPF(playlist)
+		saveAs(new Blob(["\uFEFF" + xspf], { type: "application/xspf+xml;charset=utf-8" }), this.fileName(playlist) + ".xspf")
 	},
 
 	async exportCSV(playlist) {
@@ -197,13 +201,13 @@ let PlaylistExporter = {
 		exportAll.innerHTML = '<i class="fa fa-circle-o-notch fa-spin"></i> Exporting' // spinner on button
 		error.innerHTML = ""
 		let zip = new JSZip()
-		if (format == "csv") {
-			await this.exportCSVAll(playlists, zip)
-		}
-		else {
-			// await this.exportXSPFAll(playlists, zip)
-			alert("XSPF export not yet implemented!")
-			return
+		switch (format) { // switch statement for future extension
+			case "csv":
+				await this.exportCSVAll(playlists, zip)
+				break
+			case "xspf":
+				await this.exportXSPFAll(playlists, zip)
+				break
 		}
 		exportAll.innerHTML = '<i class="fa fa-file-archive-o"></i> Export All' // change back button text
 		saveAs(zip.generate({ type: "blob" }), "spotify_playlists.zip")
@@ -225,6 +229,21 @@ let PlaylistExporter = {
 			}
 		}
 		return
+	},
+
+	async exportXSPFAll(playlists, zip) {
+		for (let playlist of playlists) {
+			try {
+				let xspf = await this.createXSPF(playlist)
+				let fileName = this.fileName(playlist)
+				while (zip.file(fileName + ".xspf")) { fileName += "_" } // Add underscores if the file already exists so playlists with duplicate names don't overwrite each other.
+				zip.file(fileName + ".xspf", xspf)
+			} catch (e) { // Surface all errors
+				error.innerHTML += "Couldn't export " + playlist.name + " with id " + playlist.id + ". Encountered <tt>" + e +
+					"</tt><br>" + e.stack + '<br>Please <a href="https://github.com/pavelkomarov/exportify/issues">let us know</a>. ' +
+					"The others are still being zipped.<br/>"
+			}
+		}
 	},
 
 	// take the playlist object and return an acceptable filename
@@ -256,6 +275,34 @@ let PlaylistExporter = {
 			return csv
 		})
 
+	},
+
+	async createXSPF(playlist) {
+		let all_data = await this.getData(playlist)
+		return Promise.all(all_data).then(values => {
+			let [data] = values
+			data = data.flat() // get rid of the batch dimension (only 100 songs per call)
+			// make a string
+			let xspf = ("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
+				"<playlist version=\"1\" xmlns=\"http://xspf.org/ns/0/\">\n" +
+				"\t<title>" + playlist.name + "</title>\n" +
+				"\t<creator>" + playlist.owner.display_name + "</creator>\n" +
+				"\t<annotation>" + playlist.description + "</annotation>\n" +
+				"\t<info>" + playlist.external_urls.spotify + "</info>\n" +
+				"\t<trackList>\n")
+			data.forEach(track => {
+				xspf += "\t\t<track>\n" +
+					"\t\t\t<location>" + track[2] + "</location>\n" +
+					"\t\t\t<title>" + track[3] + "</title>\n" +
+					"\t\t\t<creator>" + track[5] + "</creator>\n" +
+					"\t\t\t<album>" + track[4] + "</album>\n" +
+					"\t\t\t<duration>" + track[7] + "</duration>\n" +
+					"\t\t</track>\n"
+			})
+			xspf += ("\t</trackList>\n" +
+				"</playlist>\n")
+			return xspf
+		})
 	},
 
 	// This is where the magic happens. The access token gives us permission to query this info from Spotify, and the
