@@ -170,14 +170,19 @@ let PlaylistExporter = {
 	async export(playlist, row, format) {
 		document.getElementById("export" + row).innerHTML = '<i class="fa fa-circle-o-notch fa-spin"></i> Exporting' // spinner on button
 		try {
-			switch (format) {
+			let file = ""
+			let type = ""
+			switch (format) { // switch statement for future extension
 				case "csv":
-					await this.exportCSV(playlist)
+					file = await this.createCSV(playlist)
+					type = "text/csv"
 					break
 				case "xspf":
-					await this.exportXSPF(playlist)
+					file = await this.createXSPF(playlist)
+					type = "application/xspf+xml"
 					break
 			}
+			saveAs(new Blob(["\uFEFF" + file], { type: type + ";charset=utf-8" }), this.fileName(playlist) + "." + format)
 		} catch (e) {
 			error.innerHTML += "Couldn't export " + playlist.name + ". Encountered <tt>" + e + "</tt><br>" + e.stack +
 				'<br>Please <a href="https://github.com/pavelkomarov/exportify/issues">let us know</a>.'
@@ -185,16 +190,6 @@ let PlaylistExporter = {
 			document.getElementById("export" + row).innerHTML = '<i class="fa fa-download"></i> Export'
 		}
 
-	},
-
-	async exportXSPF(playlist) {
-		let xspf = await this.createXSPF(playlist)
-		saveAs(new Blob(["\uFEFF" + xspf], { type: "application/xspf+xml;charset=utf-8" }), this.fileName(playlist) + ".xspf")
-	},
-
-	async exportCSV(playlist) {
-		let csv = await this.createCSV(playlist)
-		saveAs(new Blob(["\uFEFF" + csv], { type: "text/csv;charset=utf-8" }), this.fileName(playlist) + ".csv")
 	},
 
 	async exportAll(playlists, format) {
@@ -215,6 +210,7 @@ let PlaylistExporter = {
 	},
 
 	// Handles exporting all playlist data as a zip file
+	// TODO: maybe clean the export****All functions to be only one function using switch-case statement like the export function?
 	async exportCSVAll(playlists, zip) {
 		for (let playlist of playlists) {
 			try {
@@ -251,6 +247,7 @@ let PlaylistExporter = {
 		return playlist.name.replace(/[^a-z0-9\- ]/gi, '').replace(/[ ]/gi, '_').toLowerCase() // /.../gi is a Perl-style modifier, g for global, meaning all matches replaced, i for case-insensitive
 	},
 
+	// creates the csv string to be later saved by the corresponding export functions
 	async createCSV(playlist) {
 		let all_data = await this.getData(playlist)
 		// join the tables, label the columns, and put all data in a single csv string
@@ -277,6 +274,7 @@ let PlaylistExporter = {
 
 	},
 
+	// creates the xspf string to be later saved by the corresponding export functions
 	async createXSPF(playlist) {
 		let all_data = await this.getData(playlist)
 		return Promise.all(all_data).then(values => {
@@ -293,15 +291,32 @@ let PlaylistExporter = {
 			data.forEach(track => {
 				xspf += "\t\t<track>\n" +
 					"\t\t\t<location>" + track[2] + "</location>\n" +
-					"\t\t\t<title>" + track[3] + "</title>\n" +
-					"\t\t\t<creator>" + track[5] + "</creator>\n" +
-					"\t\t\t<album>" + track[4] + "</album>\n" +
+					"\t\t\t<title>" + this.escapeXml(this.removeSurroundingQuotes(track[3])) + "</title>\n" +
+					"\t\t\t<creator>" + this.escapeXml(this.removeSurroundingQuotes(track[5])) + "</creator>\n" +
+					"\t\t\t<album>" + this.escapeXml(this.removeSurroundingQuotes(track[4])) + "</album>\n" +
 					"\t\t\t<duration>" + track[7] + "</duration>\n" +
 					"\t\t</track>\n"
 			})
 			xspf += ("\t</trackList>\n" +
 				"</playlist>\n")
 			return xspf
+		})
+	},
+
+	removeSurroundingQuotes(inputString) {
+		return inputString.replace(/^["']|["']$/g, "")
+	},
+
+	// copied from https://stackoverflow.com/a/27979933 to escape the input for xml
+	escapeXml(unsafe) {
+		return unsafe.replace(/[<>&'"]/g, function (c) {
+			switch (c) {
+				case '<': return '&lt;'
+				case '>': return '&gt;'
+				case '&': return '&amp;'
+				case '\'': return '&apos;'
+				case '"': return '&quot;'
+			}
 		})
 	},
 
@@ -383,6 +398,18 @@ let PlaylistExporter = {
 		})
 		return [data_promise, genre_promise, album_promise, features_promise]
 	}
+
+	// legacy functions
+	// I'll let them included in case they are needed in the future
+	/*async exportXSPF(playlist) {
+		let xspf = await this.createXSPF(playlist)
+		saveAs(new Blob(["\uFEFF" + xspf], { type: "application/xspf+xml;charset=utf-8" }), this.fileName(playlist) + ".xspf")
+	},*/
+
+	/*async exportCSV(playlist) {
+		let csv = await this.createCSV(playlist)
+		saveAs(new Blob(["\uFEFF" + csv], { type: "text/csv;charset=utf-8" }), this.fileName(playlist) + ".csv")
+	},*/
 
 }
 
