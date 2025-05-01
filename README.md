@@ -8,7 +8,7 @@ Export your Spotify playlist metadata for analysis or just safekeeping: [exporti
 
 ### Export Format
 
-Playlist data is exported in [CSV](http://en.wikipedia.org/wiki/Comma-separated_values) format with the following fields:
+Playlist data can be exported in [CSV](http://en.wikipedia.org/wiki/Comma-separated_values) format with the following fields:
 
 - [Track URI](https://developer.spotify.com/documentation/web-api/concepts/spotify-uris-ids)
 - Track Name
@@ -33,6 +33,26 @@ Playlist data is exported in [CSV](http://en.wikipedia.org/wiki/Comma-separated_
 - Valence
 - Tempo
 - Time Signature
+
+Playlist data can also be exported in [XSPF](https://de.wikipedia.org/wiki/XML_Shareable_Playlist_Format) format like following:
+```xml
+<?xml version="1.0" encoding="UTF-8"?>
+<playlist version="1" xmlns="http://xspf.org/ns/0/">
+  <title>playlist title</title>
+  <creator>playlist creator</creator>
+  <annotation>playlist description</annotation>
+  <info>playlist link</info>
+  <trackList>
+    <track>
+      <location>track URI</location>
+      <title>track name</title>
+      <creator>artist name(s)</creator>
+      <album>album name</album>
+      <duration>duration(ms)</duration>
+    </track>
+  </trackList>
+</playlist>
+```
 
 ### Analysis
 
