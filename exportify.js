@@ -184,8 +184,8 @@ let PlaylistExporter = {
 			}
 			saveAs(new Blob(["\uFEFF" + file], { type: type + ";charset=utf-8" }), this.fileName(playlist) + "." + format)
 		} catch (e) {
-			error.innerHTML += "Couldn't export " + playlist.name + ". Encountered <tt>" + e + "</tt><br>" + e.stack +
-				'<br>Please <a href="https://github.com/pavelkomarov/exportify/issues">let us know</a>.'
+			error.innerHTML += "Couldn't export " + playlist.name + ". Encountered <tt>" + e + "</tt><br/>" + e.stack +
+					'<br/>Please <a href="https://github.com/pavelkomarov/exportify/issues">let us know</a>.'
 		} finally { // change back the export button's text
 			document.getElementById("export" + row).innerHTML = '<i class="fa fa-download"></i> Export'
 		}
@@ -385,7 +385,6 @@ let PlaylistExporter = {
 			let songs_promises = data.map((chunk, i) => { // remember data is an array of arrays, each subarray 100 tracks
 			let ids = chunk.map(song => song[2]?.split(':')[2]).join(',') // the id lives in the third position, at the end of spotify:track:id
 			return utils.apiCall('https://api.spotify.com/v1/audio-features?ids='+ids, 100*i)
-      master
 			})
 			return Promise.all(songs_promises).then(responses => {
 				return responses.map(response => { // for each response
