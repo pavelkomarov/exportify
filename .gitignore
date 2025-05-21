@@ -3,4 +3,5 @@
 .~*
 .DS_Store
 explicit.py
-rccs-prom-2025-with-explicit.csv
+*.csv
+*.xlsx
