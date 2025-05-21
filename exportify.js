@@ -55,7 +55,7 @@ const utils = {
 // The table of this user's playlists, to be displayed mid-page in the playlistsContainer
 class PlaylistTable extends React.Component {
 	// By default the constructor passes properties to super.
-	constructor(props) { super(props) } //render() gets called at the end of constructor execution
+	constructor(props) { super(props) } //render()gets called at the end of constructor execution
 
 	// A constructor can't be async, but we need to asynchronously load data when the object is made.
 	// Solve this with a separate function that initializes object data. Call it from render().
@@ -191,32 +191,42 @@ let PlaylistExporter = {
 	// This is where the magic happens. The access token gives us permission to query this info from Spotify, and the
 	// playlist object gives us all the information we need to start asking for songs.
 	async csvData(playlist) {
-		let increment = playlist.name == "Liked Songs" ? 50 : 100 // Can max call for only 50 tracks at a time vs 100 for playlists
+        let increment = playlist.name == "Liked Songs" ? 50 : 100 // Can max call for only 50 tracks at a time vs 100 for playlists
 
-		// Make asynchronous API calls for 100 songs at a time, and put the results (all Promises) in a list.
-		let requests = []
-		for (let offset = 0; offset < playlist.tracks.total; offset += increment) {
-			requests.push(utils.apiCall(playlist.tracks.href + '?offset=' + offset + '&limit=' + increment, (offset/increment)*100)) // I'm spacing requests by 100ms regardless of increment.
-		}
-		// "returns a single Promise that resolves when all of the promises passed as an iterable have resolved"
-		// https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Promise/all
-		let artist_ids = new Set()
-		let album_ids = new Set()
-		let data_promise = Promise.all(requests).then(responses => { // Gather all the data from the responses in a table.
-			return responses.map(response => { // apply to all responses
-				return response.items.map(song => { // apply to all songs in each response
-					// Safety check! If there are artists/album listed and they have non-null identifier, add them to the sets
-					song.track?.artists?.forEach(a => { if (a && a.id) { artist_ids.add(a.id) } })
-					if (song.track?.album && song.track.album.id) { album_ids.add(song.track.album.id) }
-					// Multiple, comma-separated artists can throw off csv, so surround with "". Same for track and album names,
-					// which may contain commas and even quotation marks! Treat with care. Null checking with question marks!
-					return ['"'+song.track?.artists?.map(artist => { return artist ? artist.id : null }).join(',')+'"', song.track?.album?.id, song.track?.uri,
-						'"'+song.track?.name?.replace(/"/g,'')+'"', '"'+song.track?.album?.name?.replace(/"/g,'')+'"',
-						'"'+song.track?.artists?.map(artist => { return artist ? artist.name?.replace(/"/g,'') : null}).join(',')+'"',
-						song.track?.album?.release_date, song.track?.duration_ms, song.track?.popularity, song.added_by?.id, song.added_at]
-				})
-			})
-		})
+        // Make asynchronous API calls for 100 songs at a time, and put the results (all Promises) in a list.
+        let requests = []
+        for (let offset = 0; offset < playlist.tracks.total; offset += increment) {
+            requests.push(utils.apiCall(playlist.tracks.href + '?offset=' + offset + '&limit=' + increment, (offset/increment)*100)) // I'm spacing requests by 100ms regardless of increment.
+        }
+        // "returns a single Promise that resolves when all of the promises passed as an iterable have resolved"
+        // https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Promise/all
+        let artist_ids = new Set()
+        let album_ids = new Set()
+        let data_promise = Promise.all(requests).then(responses => { // Gather all the data from the responses in a table.
+            return responses.map(response => { // apply to all responses
+                return response.items.map(song => { // apply to all songs in each response
+                    // Safety check! If there are artists/album listed and they have non-null identifier, add them to the sets
+                    song.track?.artists?.forEach(a => { if (a && a.id) { artist_ids.add(a.id) } })
+                    if (song.track?.album && song.track.album.id) { album_ids.add(song.track.album.id) }
+                    // Multiple, comma-separated artists can throw off csv, so surround with "". Same for track and album names,
+                    // which may contain commas and even quotation marks! Treat with care. Null checking with question marks!
+                    return [
+                        '"'+song.track?.artists?.map(artist => { return artist ? artist.id : null }).join(',')+'"',
+                        song.track?.album?.id,
+                        song.track?.uri,
+                        '"'+song.track?.name?.replace(/"/g,'')+'"',
+                        '"'+song.track?.album?.name?.replace(/"/g,'')+'"',
+                        '"'+song.track?.artists?.map(artist => { return artist ? artist.name?.replace(/"/g,'') : null}).join(',')+'"',
+                        song.track?.album?.release_date,
+                        song.track?.duration_ms,
+                        song.track?.popularity,
+                        song.added_by?.id,
+                        song.added_at,
+                        song.track?.explicit ? "true" : "false" // <-- Add explicit tag here
+                    ]
+                })
+            })
+        })
 
 		// Make queries on all the artists, because this json is where genre information lives. Unfortunately this
 		// means a second wave of traffic, 50 artists at a time the maximum allowed.
@@ -282,7 +292,7 @@ let PlaylistExporter = {
 			features = features.flat() // get rid of the batch dimension (only 100 songs per call)
 			data.forEach((row, i) => features[i]?.forEach(feat => row.push(feat)))
 			// make a string
-			let csv = "Track URI,Track Name,Album Name,Artist Name(s),Release Date,Duration (ms),Popularity,Added By,Added At,Genres,Record Label,Danceability,Energy,Key,Loudness,Mode,Speechiness,Acousticness,Instrumentalness,Liveness,Valence,Tempo,Time Signature\n"
+			let csv = "Track URI,Track Name,Album Name,Artist Name(s),Release Date,Duration (ms),Popularity,Added By,Added At,Explicit,Genres,Record Label,Danceability,Energy,Key,Loudness,Mode,Speechiness,Acousticness,Instrumentalness,Liveness,Valence,Tempo,Time Signature\n"
 			data.forEach(row => { csv += row.join(",") + "\n" })
 			return csv
 		})
