@@ -5,3 +5,4 @@
 explicit.py
 *.csv
 *.xlsx
+*.py
