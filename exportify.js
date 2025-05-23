@@ -39,7 +39,7 @@ const utils = {
 				still downloading. But <a href="https://github.com/pavelkomarov/exportify/issues">I would be interested to hear about this.</a></p><br/>' }
 			return utils.apiCall(url, response.headers.get('Retry-After')*1000)
 		} // API Rate-limiting encountered (hopefully never happens with delays)
-		else { error.innerHTML = "The server returned an HTTP " + response.status + " response." } // the caller will fail
+		else { error.innerHTML = "The server returned an HTTP " + response.status + " response. " } // the caller will fail
 	},
 
 	// Logging out of Spotify is much like logging in: You have to navigate to a certain url. But unlike logging in, there is
@@ -256,7 +256,7 @@ let PlaylistExporter = {
 			})
 			return Promise.all(songs_promises).then(responses => {
 				return responses.map(response => { // for each response
-					return response.audio_features?.map(feats => {
+					return response?.audio_features?.map(feats => {
 						return [feats?.danceability, feats?.energy, feats?.key, feats?.loudness, feats?.mode,
 							feats?.speechiness, feats?.acousticness, feats?.instrumentalness, feats?.liveness, feats?.valence,
 							feats?.tempo, feats?.time_signature] // Safety-checking question marks
