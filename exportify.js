@@ -185,7 +185,7 @@ let PlaylistExporter = {
 
 	// take the playlist object and return an acceptable filename
 	fileName(playlist) {
-		return playlist.name.replace(/[^a-z0-9\- ]/gi, '').replace(/[ ]/gi, '_').toLowerCase() // /.../gi is a Perl-style modifier, g for global, meaning all matches replaced, i for case-insensitive
+		return playlist.name.replace(/[^a-z0-9\- ]/gi, '').replace(/ /gi, '_').toLowerCase() // /.../gi is a Perl-style modifier, g for global, meaning all matches replaced, i for case-insensitive
 	},
 
 	// This is where the magic happens. The access token gives us permission to query this info from Spotify, and the
@@ -210,9 +210,9 @@ let PlaylistExporter = {
 					if (song.track?.album && song.track.album.id) { album_ids.add(song.track.album.id) }
 					// Multiple, comma-separated artists can throw off csv, so surround with "". Same for track and album names,
 					// which may contain commas and even quotation marks! Treat with care. Null checking with question marks!
-					return ['"'+song.track?.artists?.map(artist => { return artist ? artist.id : null }).join(',')+'"', song.track?.album?.id, song.track?.uri,
-						'"'+song.track?.name?.replace(/"/g,'')+'"', '"'+song.track?.album?.name?.replace(/"/g,'')+'"',
-						'"'+song.track?.artists?.map(artist => { return artist ? artist.name?.replace(/"/g,'') : null}).join(',')+'"',
+					return ['"'+song.track?.artists?.map(artist => { return artist?.id }).join(',')+'"', song.track?.album?.id, song.track?.uri,
+						'"'+song.track?.name?.replace(/[",]/g,'')+'"', '"'+song.track?.album?.name?.replace(/[",]/g,'')+'"',
+						'"'+song.track?.artists?.map(artist => { return artist?.name?.replace(/[",]/g,'') }).join(',')+'"',
 						song.track?.album?.release_date, song.track?.duration_ms, song.track?.popularity, song.added_by?.id, song.added_at]
 				})
 			})
