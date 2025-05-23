@@ -213,7 +213,7 @@ let PlaylistExporter = {
 					return ['"'+song.track?.artists?.map(artist => { return artist?.id }).join(',')+'"', song.track?.album?.id, song.track?.uri,
 						'"'+song.track?.name?.replace(/[",]/g,'')+'"', '"'+song.track?.album?.name?.replace(/[",]/g,'')+'"',
 						'"'+song.track?.artists?.map(artist => { return artist?.name?.replace(/[",]/g,'') }).join(',')+'"',
-						song.track?.album?.release_date, song.track?.duration_ms, song.track?.popularity, song.added_by?.id, song.added_at]
+						song.track?.album?.release_date, song.track?.duration_ms, song.track?.popularity, song.track?.explicit, song.added_by?.id, song.added_at]
 				})
 			})
 		})
@@ -282,7 +282,7 @@ let PlaylistExporter = {
 			features = features.flat() // get rid of the batch dimension (only 100 songs per call)
 			data.forEach((row, i) => features[i]?.forEach(feat => row.push(feat)))
 			// make a string
-			let csv = "Track URI,Track Name,Album Name,Artist Name(s),Release Date,Duration (ms),Popularity,Added By,Added At,Genres,Record Label,Danceability,Energy,Key,Loudness,Mode,Speechiness,Acousticness,Instrumentalness,Liveness,Valence,Tempo,Time Signature\n"
+			let csv = "Track URI,Track Name,Album Name,Artist Name(s),Release Date,Duration (ms),Popularity,Explicit,Added By,Added At,Explicit,Genres,Record Label,Danceability,Energy,Key,Loudness,Mode,Speechiness,Acousticness,Instrumentalness,Liveness,Valence,Tempo,Time Signature\n"
 			data.forEach(row => { csv += row.join(",") + "\n" })
 			return csv
 		})

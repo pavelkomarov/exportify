@@ -17,6 +17,7 @@ Playlist data is exported in [CSV](http://en.wikipedia.org/wiki/Comma-separated_
 - Release Date
 - Duration (ms)
 - Popularity
+- Explicit
 - Added By
 - Added At
 - Genres
