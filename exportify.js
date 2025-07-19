@@ -211,8 +211,8 @@ let PlaylistExporter = {
 					// Multiple, comma-separated artists can throw off csv, so surround with "". Same for track and album names,
 					// which may contain commas and even quotation marks! Treat with care. Null checking with question marks!
 					return ['"'+song.track?.artists?.map(artist => { return artist?.id }).join(',')+'"', song.track?.album?.id, song.track?.uri,
-						'"'+song.track?.name?.replace(/[",]/g,'')+'"', '"'+song.track?.album?.name?.replace(/[",]/g,'')+'"',
-						'"'+song.track?.artists?.map(artist => { return artist?.name?.replace(/[",]/g,'') }).join(',')+'"',
+						'"'+song.track?.name?.replace(/["]/g,'""')+'"', '"'+song.track?.album?.name?.replace(/["]/g,'""')+'"',
+						'"'+song.track?.artists?.map(artist => { return artist?.name?.replace(/["]/g,'""') }).join(',')+'"',
 						song.track?.album?.release_date, song.track?.duration_ms, song.track?.popularity, song.track?.explicit, song.added_by?.id, song.added_at]
 				})
 			})
