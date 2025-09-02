@@ -190,7 +190,7 @@ let PlaylistExporter = {
 
 	// take the playlist object and return an acceptable filename
 	fileName(playlist) {
-		return playlist.name.replace(/[\/\\:*?"<>|]/g, '').replace(/\s+/g, '_')// /.../gi is a Perl-style modifier, g for global, meaning all matches replaced
+		return playlist.name.replace(/[\/\\:*?"<>|]/g, '').replace(/\s+/g, '_')// /.../g is a Perl-style modifier, g for global, meaning all matches replaced
 	},
 
 	// This is where the magic happens. The access token gives us permission to query this info from Spotify, and the
