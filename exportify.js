@@ -215,10 +215,17 @@ let PlaylistExporter = {
 					if (song.track?.album && song.track.album.id) { album_ids.add(song.track.album.id) }
 					// Multiple, comma-separated artists can throw off csv, so surround with "". Same for track and album names,
 					// which may contain commas and even quotation marks! Treat with care. Null checking with question marks!
-					return ['"'+song.track?.artists?.map(artist => { return artist?.id }).join(',')+'"', song.track?.album?.id, song.track?.uri,
-						'"'+song.track?.name?.replace(/[",]/g,'')+'"', '"'+song.track?.album?.name?.replace(/[",]/g,'')+'"',
-						'"'+song.track?.artists?.map(artist => { return artist?.name?.replace(/[",]/g,'') }).join(',')+'"',
-						song.track?.album?.release_date, song.track?.duration_ms, song.track?.popularity, song.track?.explicit, song.added_by?.id, song.added_at]
+					return [
+						'"'+song.track?.artists?.map(artist => { return artist?.id }).join(',')+'"',
+						song.track?.album?.id,
+						song.track?.uri,
+						'"'+song.track?.name?.replace(/"/g,'""')+'"',
+						'"'+song.track?.album?.name?.replace(/"/g,'""')+'"',
+						// Multiple artists are separated using semi-colons. Pre-existing semi-colons are removed as they are rare enough in artist names
+						// Note: removing semicolons to use them as separators is a band-aid fix as some artist names will still be corrupted (albeit not that many)
+						'"'+song.track?.artists?.map(artist => { return artist?.name?.replace(/"/g,'""').replace(/;/g,'') }).join(';')+'"',
+						song.track?.album?.release_date, song.track?.duration_ms, song.track?.popularity, song.track?.explicit, song.added_by?.id, song.added_at
+					]
 				})
 			})
 		})
