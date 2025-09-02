@@ -27,7 +27,7 @@ const utils = {
 	// Promise returned by the fetch to get a second Promise that has the actual data in it!
 	// https://developer.mozilla.org/en-US/docs/Web/API/Fetch_API/Using_Fetch
 	// https://eloquentjavascript.net/11_async.html
-	async apiCall(url, delay=0) {
+	async apiCall(url, delay=0, bad_gateway_retries=2) {
 		await new Promise(r => setTimeout(r, delay)) // JavaScript equivalent of sleep(delay), to stay under rate limits ;)
 		let response = await fetch(url, { headers: { 'Authorization': 'Bearer ' + localStorage.getItem('access_token')} })
 		if (response.ok) { return response.json() }
@@ -37,9 +37,14 @@ const utils = {
 				</i></p><p>Exportify has encountered <a target="_blank" href="https://developer.spotify.com/documentation/web-api/concepts/rate-limits">\
 				rate limiting</a> while querying endpoint ' + url.split('?')[0] + '!<br/>Don\'t worry: Automatic backoff is implemented, and your data is \
 				still downloading. But <a href="https://github.com/pavelkomarov/exportify/issues">I would be interested to hear about this.</a></p><br/>' }
-			return utils.apiCall(url, response.headers.get('Retry-After')*1000)
-		} // API Rate-limiting encountered (hopefully never happens with delays)
-		else { error.innerHTML = "The server returned an HTTP " + response.status + " response. " } // the caller will fail
+			return utils.apiCall(url, response.headers.get('Retry-After')*1000) } // API Rate-limiting encountered (hopefully never happens with delays)
+		else if (response.status == 502 && bad_gateway_retries > 0) {
+			if (!error.innerHTML.includes("fa-bolt")) { error.innerHTML += '<p><i class="fa fa-bolt" style="font-size: 50px; margin-bottom: 20px">\
+				</i></p><p>Exportify has encountered a <a target="_blank" href="https://developer.mozilla.org/en-US/docs/Web/HTTP/Reference/Status/502">\
+				bad gateway</a> while querying endpoint ' + url.split('?')[0] + '!<br/>Retries are implemented, so your download may still succeed. \
+				But <a href="https://github.com/pavelkomarov/exportify/issues">I would be interested to hear about this.</a></p><br/>' }
+            return utils.apiCall(url, (3-bad_gateway_retries)*1000, bad_gateway_retries-1) }
+		else { error.innerHTML = "The server returned an unhandled kind of HTTP response: " + response.status } // the caller will fail
 	},
 
 	// Logging out of Spotify is much like logging in: You have to navigate to a certain url. But unlike logging in, there is
