@@ -18,7 +18,7 @@ const utils = {
 
 		localStorage.setItem('code_verifier', code_verifier) // save the random string secret
 		location = "https://accounts.spotify.com/authorize?client_id=d99b082b01d74d61a100c9a0e056380b" +
-			"&redirect_uri=" + encodeURIComponent(location.origin + location.pathname) +
+			"&redirect_uri=" + encodeURIComponent(location.origin) +
 			"&scope=playlist-read-private%20playlist-read-collaborative%20user-library-read" + // access to particular scopes of info defined here
 			"&response_type=code&code_challenge_method=S256&code_challenge=" + code_challenge
 	},
@@ -49,11 +49,10 @@ const utils = {
 
 	// Logging out of Spotify is much like logging in: You have to navigate to a certain url. But unlike logging in, there is
 	// no way to redirect back to my home page. So open the logout page in a new tab, then redirect to the homepage after a
-	// second, which is almost always long enough for the logout request to go through.
+	// second, which is almost always long enough for the logout request to go through. Scratch that: just wipe data and reload page.
 	logout() {
 		localStorage.clear() // otherwise when the page is reloaded it still just finds and uses the access_token
-		let logout = open("https://www.spotify.com/logout")
-		setTimeout(() => {logout.close(); location = location.origin}, 1000)
+		location = location.origin // let logout = open("https://www.spotify.com/logout"); setTimeout(() => {logout.close(); location = location.origin}, 1000)
 	}
 }
 
@@ -302,7 +301,7 @@ onload = async () => {
 		history.replaceState({}, '', '/') // get rid of the ugly code string from the browser bar
 
 		let response = await fetch("https://accounts.spotify.com/api/token", { method: 'POST', headers: {'Content-Type': 'application/x-www-form-urlencoded'},
-			body: new URLSearchParams({client_id: "d99b082b01d74d61a100c9a0e056380b", grant_type: 'authorization_code', code: code, redirect_uri: location.origin + location.pathname,
+			body: new URLSearchParams({client_id: "d99b082b01d74d61a100c9a0e056380b", grant_type: 'authorization_code', code: code, redirect_uri: location.origin,
 				code_verifier: localStorage.getItem('code_verifier')}) }) // POST to get the access token, then fish it out of the response body
 		localStorage.setItem('access_token', (await response.json()).access_token) // https://stackoverflow.com/questions/59555534/why-is-json-asynchronous
 		localStorage.setItem('access_token_timestamp', Date.now())

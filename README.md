@@ -58,7 +58,7 @@ To experiment with changes, run a local web server. For example, using Python (i
 python3 -m http.server
 ```
 
-Then open [http://localhost:8000](http://localhost:8000). The Javascript can be invoked by interacting with this locally-served webpage.
+Then open [http://[::1]:8000](http://[::1]:8000). The Javascript can be invoked by interacting with this locally-served webpage.
 
 Data science stuff is written with Python in `taste_analysis.ipynb`, which you can run with `python3 -m notebook`, then navigating to [http://localhost:8888](http://localhost:8888).
 
