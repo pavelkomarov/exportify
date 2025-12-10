@@ -33,11 +33,11 @@ const utils = {
 		if (response.ok) { return response.json() }
 		else if (response.status == 401) { location = location.href.split('#')[0] } // Return to home page after auth token expiry
 		else if (response.status == 429) {
-			if (!error.innerHTML.includes("fa-bolt")) { error.innerHTML += '<p><i class="fa fa-bolt" style="font-size: 50px; margin-bottom: 20px">\
-				</i></p><p>Exportify has encountered <a target="_blank" href="https://developer.spotify.com/documentation/web-api/concepts/rate-limits">\
-				rate limiting</a> while querying endpoint ' + url.split('?')[0] + '!<br/>Don\'t worry: Automatic backoff is implemented, and your data is \
-				still downloading. But <a href="https://github.com/pavelkomarov/exportify/issues">I would be interested to hear about this.</a></p><br/>' }
-			return utils.apiCall(url, response.headers.get('Retry-After')*1000) } // API Rate-limiting encountered (hopefully never happens with delays)
+			//if (!error.innerHTML.includes("fa-bolt")) { error.innerHTML += '<p><i class="fa fa-bolt" style="font-size: 50px; margin-bottom: 20px">\
+			//	</i></p><p>Exportify has encountered <a target="_blank" href="https://developer.spotify.com/documentation/web-api/concepts/rate-limits">\
+			//	rate limiting</a> while querying endpoint ' + url.split('?')[0] + '!<br/>Don\'t worry: Automatic backoff is implemented, and your data is \
+			//	still downloading. But <a href="https://github.com/pavelkomarov/exportify/issues">I would be interested to hear about this.</a></p><br/>' }
+			return utils.apiCall(url, response.headers.get('Retry-After')*1000) } // API Rate-limiting encountered, so tail-call replacement request on a delay
 		else if (response.status == 502 && bad_gateway_retries > 0) {
 			if (!error.innerHTML.includes("fa-bolt")) { error.innerHTML += '<p><i class="fa fa-bolt" style="font-size: 50px; margin-bottom: 20px">\
 				</i></p><p>Exportify has encountered a <a target="_blank" href="https://developer.mozilla.org/en-US/docs/Web/HTTP/Reference/Status/502">\
@@ -52,7 +52,7 @@ const utils = {
 	// second, which is almost always long enough for the logout request to go through. Scratch that: just wipe data and reload page.
 	logout() {
 		localStorage.clear() // otherwise when the page is reloaded it still just finds and uses the access_token
-		location = location.origin // let logout = open("https://www.spotify.com/logout"); setTimeout(() => {logout.close(); location = location.origin}, 1000)
+		location = location.origin //let logout = open("https://www.spotify.com/logout"); setTimeout(() => {logout.close(); location = location.origin}, 1000)
 	}
 }
 
