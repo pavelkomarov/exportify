@@ -44,7 +44,7 @@ const utils = {
 				bad gateway</a> while querying endpoint ' + url.split('?')[0] + '!<br/>Retries are implemented, so your download may still succeed. \
 				But <a href="https://github.com/pavelkomarov/exportify/issues">I would be interested to hear about this.</a></p><br/>' }
             return utils.apiCall(url, (3-bad_gateway_retries)*1000, bad_gateway_retries-1) }
-		else { error.innerHTML = "The server returned an unhandled kind of HTTP response: " + response.status } // the caller will fail
+		else { error.innerHTML = "The server returned an HTTP " + response.status + " response.<br/>" } // the caller will fail
 	},
 
 	// Logging out of Spotify is much like logging in: You have to navigate to a certain url. But unlike logging in, there is
