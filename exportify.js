@@ -49,10 +49,10 @@ const utils = {
 
 	// Logging out of Spotify is much like logging in: You have to navigate to a certain url. But unlike logging in, there is
 	// no way to redirect back to my home page. So open the logout page in a new tab, then redirect to the homepage after a
-	// second, which is almost always long enough for the logout request to go through. Scratch that: just wipe data and reload page.
+	// second, which is almost always long enough for the logout request to go through.
 	logout() {
 		localStorage.clear() // otherwise when the page is reloaded it still just finds and uses the access_token
-		location = location.origin //let logout = open("https://www.spotify.com/logout"); setTimeout(() => {logout.close(); location = location.origin}, 1000)
+		let logout = open("https://www.spotify.com/logout"); setTimeout(() => {logout.close(); location = location.origin}, 1000)
 	}
 }
 
