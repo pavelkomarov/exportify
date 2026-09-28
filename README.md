@@ -11,6 +11,7 @@ Export your Spotify playlist metadata for analysis or just safekeeping: [exporti
 Playlist data is exported in [CSV](http://en.wikipedia.org/wiki/Comma-separated_values) format with the following fields:
 
 - [Track URI](https://developer.spotify.com/documentation/web-api/concepts/spotify-uris-ids)
+- [ISRC](https://en.wikipedia.org/wiki/International_Standard_Recording_Code)
 - Track Name
 - Album Name
 - Artist Name(s)
