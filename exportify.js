@@ -69,24 +69,41 @@ class PlaylistTable extends React.Component {
 		let library = await utils.apiCall("https://api.spotify.com/v1/me/tracks?offset=0&limit=1")
 
 		// fake a playlist-like structure for the liked songs, so it plays well with the rest of the code
-		let liked_songs = {name: "Liked Songs", external_urls: {spotify: "https://open.spotify.com/collection/tracks"},
+		let liked_songs = {name: "Liked Songs", id: "liked_songs", external_urls: {spotify: "https://open.spotify.com/collection/tracks"},
 			images:[{url: "liked_songs.jpeg"}], owner: {id: user.id, external_urls: {spotify: user.external_urls.spotify}},
 			tracks: {total: library.total, href: "https://api.spotify.com/v1/me/tracks"}}
-		let playlists = [[liked_songs]] // double list so .flat() flattens everything right later
+
+		// fake a playlist-like structure for saved albums, except we have to fetch all now to count tracks, and there is no href
+		let response = await utils.apiCall("https://api.spotify.com/v1/me/albums?limit=50&offset=0")
+		let albums = [response.items]
+		for (let offset = 50; offset < response.total; offset += 50) {
+			albums.push(utils.apiCall("https://api.spotify.com/v1/me/albums?limit=50&offset=" + offset, 2*offset-100).then(response => response.items))
+		}
+		albums = (await Promise.all(albums)).flat() // flatten list of lists into just a list
+		let songs = [], record_labels = {} // save record labels too, so csvData doesn't have to query albums again
+		for (let a of albums) {
+			record_labels[a.album.id] = a.album.label
+			for (let tracks = a.album.tracks; tracks; tracks = tracks.next && await utils.apiCall(tracks.next)) { // if there is a tracks.next, follow it
+				songs.push(...tracks.items.map(track => ({id: track.id, added_at: a.added_at}))) // added_at is when the album was saved
+			}
+		}
+		let saved_albums = {name: "Saved Albums", id: "saved_albums", external_urls: {spotify: "https://open.spotify.com/collection/albums"},
+			images:[{url: "saved_albums.png"}], owner: {id: user.id, external_urls: {spotify: user.external_urls.spotify}},
+			tracks: {total: songs.length}, songs: songs, record_labels: record_labels}
+		let playlists = [[liked_songs, saved_albums]] // double list so .flat() flattens everything right
 
 		// Compose a list of all the user's playlists by querying the playlists endpoint. Their total number of playlists
 		// needs to be garnered from a response, so await the first response, then send a volley of requests to get the rest.
 		// https://developer.spotify.com/documentation/web-api/reference/get-list-users-playlists
-		let response = await utils.apiCall("https://api.spotify.com/v1/me/playlists?limit=50&offset=0")
+		response = await utils.apiCall("https://api.spotify.com/v1/me/playlists?limit=50&offset=0")
 		playlists.push(response.items)
-		let requests = []
 		for (let offset = 50; offset < response.total; offset += 50) {
-			requests.push(utils.apiCall("https://api.spotify.com/v1/me/playlists?limit=50&offset=" + offset, 2*offset-100))
+			playlists.push(utils.apiCall("https://api.spotify.com/v1/me/playlists?limit=50&offset=" + offset, 2*offset-100).then(response => response.items))
 		}
-		await Promise.all(requests).then(responses => responses.map(response => playlists.push(response.items)))
+		playlists = (await Promise.all(playlists)).flat() // flatten list of lists into just a list
 
 		//add info to this Component's state. Use setState() so render() gets called again.
-		this.setState({ playlists: playlists.flat() }) // flatten list of lists into just a list
+		this.setState({ playlists: playlists })
 		subtitle.textContent = this.state.playlists.length + ' playlists\n' // directly reference an HTML element by id
 	}
 
@@ -195,11 +212,16 @@ let PlaylistExporter = {
 	// This is where the magic happens. The access token gives us permission to query this info from Spotify, and the
 	// playlist object gives us all the information we need to start asking for songs.
 	async csvData(playlist) {
-		let increment = playlist.name == "Liked Songs" ? 50 : 100 // Can max call for only 50 tracks at a time vs 100 for playlists
+		let increment = ["liked_songs", "saved_albums"].includes(playlist.id) ? 50 : 100 // Can max call for only 50 tracks at a time vs 100 for playlists
 
-		// Make asynchronous API calls for 100 songs at a time, and put the results (all Promises) in a list.
+		// Make asynchronous API calls for `increment` songs at a time, and put the results (all Promises) in a list.
 		let requests = []
-		for (let offset = 0; offset < playlist.tracks.total; offset += increment) {
+		if (playlist.id == "saved_albums") for (let offset = 0; offset < playlist.tracks.total; offset += increment) {
+			let chunk = playlist.songs.slice(offset, offset+increment) // tracks known, but we want more details, and saved albums have no href to page through
+			requests.push(utils.apiCall("https://api.spotify.com/v1/tracks?ids=" + chunk.map(s => s.id).join(','), (offset/increment)*100).then(
+				response => ({ items: response.tracks.map((track, i) => ({ track: track, added_at: chunk[i].added_at })) })))
+		}
+		else for (let offset = 0; offset < playlist.tracks.total; offset += increment) {
 			requests.push(utils.apiCall(playlist.tracks.href + '?offset=' + offset + '&limit=' + increment, (offset/increment)*100)) // I'm spacing requests by 100ms regardless of increment.
 		}
 		// "returns a single Promise that resolves when all of the promises passed as an iterable have resolved"
@@ -218,7 +240,8 @@ let PlaylistExporter = {
 					return ['"'+song.track?.artists?.map(artist => { return artist?.id }).join(',')+'"', song.track?.album?.id, song.track?.uri,
 						song.track?.external_ids?.isrc, '"'+song.track?.name?.replace(/"/g,'""')+'"', '"'+song.track?.album?.name?.replace(/"/g,'""')+'"',
 						'"'+song.track?.artists?.map(artist => { return artist?.name?.replace(/"/g,'""').replace(/;/g,'') }).join(';')+'"',
-						song.track?.album?.release_date, song.track?.duration_ms, song.track?.popularity, song.track?.explicit, song.added_by?.id, song.added_at]
+						song.track?.album?.release_date, song.track?.duration_ms, song.track?.popularity, song.track?.explicit,
+						song.added_by?.id ?? playlist.owner.id, song.added_at]
 				})
 			})
 		})
@@ -240,7 +263,8 @@ let PlaylistExporter = {
 
 		// Fetch album details, another wave of traffic, 20 albums at a time max. Happens after genre_promise has finished, to build in delay.
 		let album_promise = Promise.all([data_promise, genre_promise]).then(() => {
-			album_ids = Array.from(album_ids) // chunk set of ids into 20s
+			if (playlist.id == "saved_albums") { return playlist.record_labels } // already got these in init()
+			album_ids = Array.from(album_ids) // turn set into array so it can be chunked
 			let album_chunks = []; while (album_ids.length) { album_chunks.push(album_ids.splice(0, 20)) }
 			let album_promises = album_chunks.map((chunk_ids, i) => utils.apiCall(
 				'https://api.spotify.com/v1/albums?ids=' + chunk_ids.join(','), 120*i))
