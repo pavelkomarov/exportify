@@ -184,11 +184,11 @@ let PlaylistExporter = {
 
 	// Handles exporting all playlist data as a zip file
 	async exportAll(playlists) {
-		exportAll.innerHTML = '<i class="fa fa-circle-o-notch fa-spin"></i> Exporting' // spinner on button
 		error.innerHTML = ""
 		let zip = new JSZip()
 
-		for (let playlist of playlists) {
+		for (let [i, playlist] of playlists.entries()) {
+			exportAll.innerHTML = '<i class="fa fa-circle-o-notch fa-spin"></i> Exporting ' + (i+1) + '/' + playlists.length // spinner and progress on button
 			try {
 				let csv = await this.csvData(playlist)
 				let fileName = this.fileName(playlist)
