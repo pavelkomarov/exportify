@@ -219,7 +219,7 @@ let PlaylistExporter = {
 		if (playlist.id == "saved_albums") for (let offset = 0; offset < playlist.tracks.total; offset += increment) {
 			let chunk = playlist.songs.slice(offset, offset+increment) // tracks known, but we want more details, and saved albums have no href to page through
 			requests.push(utils.apiCall("https://api.spotify.com/v1/tracks?ids=" + chunk.map(s => s.id).join(','), (offset/increment)*100).then(
-				response => ({ items: response.tracks.map((track, k) => ({ track: track, added_at: chunk[k].added_at })) })))
+				response => ({ items: response.tracks.map((track, i) => ({ track: track, added_at: chunk[i].added_at })) })))
 		}
 		else for (let offset = 0; offset < playlist.tracks.total; offset += increment) {
 			requests.push(utils.apiCall(playlist.tracks.href + '?offset=' + offset + '&limit=' + increment, (offset/increment)*100)) // I'm spacing requests by 100ms regardless of increment.
@@ -264,7 +264,7 @@ let PlaylistExporter = {
 		// Fetch album details, another wave of traffic, 20 albums at a time max. Happens after genre_promise has finished, to build in delay.
 		let album_promise = Promise.all([data_promise, genre_promise]).then(() => {
 			if (playlist.id == "saved_albums") { return playlist.record_labels } // already got these in init()
-			album_ids = Array.from(album_ids) // chunk set of ids into 20s
+			album_ids = Array.from(album_ids) // turn set into array so it can be chunked
 			let album_chunks = []; while (album_ids.length) { album_chunks.push(album_ids.splice(0, 20)) }
 			let album_promises = album_chunks.map((chunk_ids, i) => utils.apiCall(
 				'https://api.spotify.com/v1/albums?ids=' + chunk_ids.join(','), 120*i))
