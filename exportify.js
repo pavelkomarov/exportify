@@ -195,12 +195,15 @@ let PlaylistExporter = {
 	// This is where the magic happens. The access token gives us permission to query this info from Spotify, and the
 	// playlist object gives us all the information we need to start asking for songs.
 	async csvData(playlist) {
-		let increment = playlist.name == "Liked Songs" ? 50 : 100 // Can max call for only 50 tracks at a time vs 100 for playlists
+		// Build the URL rather than following playlist.tracks.href, which Spotify serves as either /tracks or /items.
+		// Liked Songs is the only "playlist" without an id. Both endpoints max out at 50 items per call.
+		let url = playlist.id ? "https://api.spotify.com/v1/playlists/" + playlist.id + "/items" : "https://api.spotify.com/v1/me/tracks"
+		let increment = 50
 
-		// Make asynchronous API calls for 100 songs at a time, and put the results (all Promises) in a list.
+		// Make asynchronous API calls for 50 songs at a time, and put the results (all Promises) in a list.
 		let requests = []
 		for (let offset = 0; offset < playlist.tracks.total; offset += increment) {
-			requests.push(utils.apiCall(playlist.tracks.href + '?offset=' + offset + '&limit=' + increment, (offset/increment)*100)) // I'm spacing requests by 100ms regardless of increment.
+			requests.push(utils.apiCall(url + '?offset=' + offset + '&limit=' + increment, (offset/increment)*100)) // I'm spacing requests by 100ms
 		}
 		// "returns a single Promise that resolves when all of the promises passed as an iterable have resolved"
 		// https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Promise/all
@@ -208,17 +211,18 @@ let PlaylistExporter = {
 		let album_ids = new Set()
 		let data_promise = Promise.all(requests).then(responses => { // Gather all the data from the responses in a table.
 			return responses.map(response => { // apply to all responses
-				return response.items.map(song => { // apply to all songs in each response
+				return response.items.map(entry => { // apply to all songs in each response
+					let song = entry.item ?? entry.track // /items calls it item, /me/tracks (and the deprecated /tracks) call it track
 					// Safety check! If there are artists/album listed and they have non-null identifier, add them to the sets
-					song.track?.artists?.forEach(a => { if (a && a.id) { artist_ids.add(a.id) } })
-					if (song.track?.album && song.track.album.id) { album_ids.add(song.track.album.id) }
+					song?.artists?.forEach(a => { if (a && a.id) { artist_ids.add(a.id) } })
+					if (song?.album && song.album.id) { album_ids.add(song.album.id) }
 					// Commas in various fields can throw off csv, so surround with quotes. Quotes are escaped by doubling "".
 					// For robustness to missing data, null-checking question marks abound. Artists are separated with
 					// semicolons so commas can be preserved in their names without confusion.
-					return ['"'+song.track?.artists?.map(artist => { return artist?.id }).join(',')+'"', song.track?.album?.id, song.track?.uri,
-						'"'+song.track?.name?.replace(/"/g,'""')+'"', '"'+song.track?.album?.name?.replace(/"/g,'""')+'"',
-						'"'+song.track?.artists?.map(artist => { return artist?.name?.replace(/"/g,'""').replace(/;/g,'') }).join(';')+'"',
-						song.track?.album?.release_date, song.track?.duration_ms, song.track?.popularity, song.track?.explicit, song.added_by?.id, song.added_at]
+					return ['"'+song?.artists?.map(artist => { return artist?.id }).join(',')+'"', song?.album?.id, song?.uri,
+						'"'+song?.name?.replace(/"/g,'""')+'"', '"'+song?.album?.name?.replace(/"/g,'""')+'"',
+						'"'+song?.artists?.map(artist => { return artist?.name?.replace(/"/g,'""').replace(/;/g,'') }).join(';')+'"',
+						song?.album?.release_date, song?.duration_ms, song?.popularity, song?.explicit, entry.added_by?.id, entry.added_at]
 				})
 			})
 		})
