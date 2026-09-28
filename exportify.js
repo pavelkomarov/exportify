@@ -72,7 +72,23 @@ class PlaylistTable extends React.Component {
 		let liked_songs = {name: "Liked Songs", external_urls: {spotify: "https://open.spotify.com/collection/tracks"},
 			images:[{url: "liked_songs.jpeg"}], owner: {id: user.id, external_urls: {spotify: user.external_urls.spotify}},
 			tracks: {total: library.total, href: "https://api.spotify.com/v1/me/tracks"}}
-		let playlists = [[liked_songs]] // double list so .flat() flattens everything right later
+		// same trick for saved albums, exported as all the tracks on all the albums. Grab all the albums now to count their
+		// tracks, and keep the track ids around for csvData, since there's no endpoint to page through saved albums' tracks.
+		let albums = await utils.apiCall("https://api.spotify.com/v1/me/albums?offset=0&limit=50")
+		let album_pages = [albums]
+		for (let offset = 50; offset < albums.total; offset += 50) {
+			album_pages.push(utils.apiCall("https://api.spotify.com/v1/me/albums?offset=" + offset + "&limit=50", 2*offset-100))
+		}
+		let saved = (await Promise.all(album_pages)).flatMap(page => page.items)
+		for (let s of saved) { // album.tracks holds only the first 50 tracks, so follow the next links through longer albums
+			let page = s.album.tracks
+			while (page.next) { page = await utils.apiCall(page.next); s.album.tracks.items.push(...page.items) }
+		}
+		let songs = saved.flatMap(s => s.album.tracks.items.map(track => ({id: track.id, added_at: s.added_at}))) // added_at is when the album was saved
+		let saved_albums = {name: "Saved Albums", external_urls: {spotify: user.external_urls.spotify}, // no web link for saved albums
+			images:[{url: "https://placehold.co/30?text=albums"}], owner: {id: user.id, external_urls: {spotify: user.external_urls.spotify}},
+			tracks: {total: songs.length}, songs: songs}
+		let playlists = [[liked_songs, saved_albums]] // double list so .flat() flattens everything right later
 
 		// Compose a list of all the user's playlists by querying the playlists endpoint. Their total number of playlists
 		// needs to be garnered from a response, so await the first response, then send a volley of requests to get the rest.
@@ -192,6 +208,19 @@ let PlaylistExporter = {
 		return playlist.name.replace(/[\/\\:*?"<>|]/g, '').replace(/\s+/g, '_')// /.../g is a Perl-style modifier, g for global, meaning all matches replaced
 	},
 
+	// Saved albums come back with their tracks listed, but those are "simplified" track objects that lack popularity, ISRC,
+	// and album info. So take the track ids, fetch full track objects 50 at a time, and dress each response up like a
+	// page of playlist items, so csvData can treat it exactly like a playlist.
+	savedAlbumsTracks(songs) {
+		let requests = []
+		for (let i = 0; i < songs.length; i += 50) {
+			let chunk = songs.slice(i, i+50)
+			requests.push(utils.apiCall("https://api.spotify.com/v1/tracks?ids=" + chunk.map(s => s.id).join(','), i*2).then(response =>
+				({ items: response.tracks.map((track, k) => ({ track: track, added_at: chunk[k].added_at })) })))
+		}
+		return requests
+	},
+
 	// This is where the magic happens. The access token gives us permission to query this info from Spotify, and the
 	// playlist object gives us all the information we need to start asking for songs.
 	async csvData(playlist) {
@@ -199,7 +228,8 @@ let PlaylistExporter = {
 
 		// Make asynchronous API calls for 100 songs at a time, and put the results (all Promises) in a list.
 		let requests = []
-		for (let offset = 0; offset < playlist.tracks.total; offset += increment) {
+		if (playlist.name == "Saved Albums") { requests = this.savedAlbumsTracks(playlist.songs) } // no href to page through for albums
+		else for (let offset = 0; offset < playlist.tracks.total; offset += increment) {
 			requests.push(utils.apiCall(playlist.tracks.href + '?offset=' + offset + '&limit=' + increment, (offset/increment)*100)) // I'm spacing requests by 100ms regardless of increment.
 		}
 		// "returns a single Promise that resolves when all of the promises passed as an iterable have resolved"
