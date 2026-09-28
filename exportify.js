@@ -208,19 +208,6 @@ let PlaylistExporter = {
 		return playlist.name.replace(/[\/\\:*?"<>|]/g, '').replace(/\s+/g, '_')// /.../g is a Perl-style modifier, g for global, meaning all matches replaced
 	},
 
-	// Saved albums come back with their tracks listed, but those are "simplified" track objects that lack popularity, ISRC,
-	// and album info. So take the track ids, fetch full track objects 50 at a time, and dress each response up like a
-	// page of playlist items, so csvData can treat it exactly like a playlist.
-	savedAlbumsTracks(songs) {
-		let requests = []
-		for (let i = 0; i < songs.length; i += 50) {
-			let chunk = songs.slice(i, i+50)
-			requests.push(utils.apiCall("https://api.spotify.com/v1/tracks?ids=" + chunk.map(s => s.id).join(','), i*2).then(response =>
-				({ items: response.tracks.map((track, k) => ({ track: track, added_at: chunk[k].added_at })) })))
-		}
-		return requests
-	},
-
 	// This is where the magic happens. The access token gives us permission to query this info from Spotify, and the
 	// playlist object gives us all the information we need to start asking for songs.
 	async csvData(playlist) {
@@ -228,7 +215,13 @@ let PlaylistExporter = {
 
 		// Make asynchronous API calls for 100 songs at a time, and put the results (all Promises) in a list.
 		let requests = []
-		if (playlist.name == "Saved Albums") { requests = this.savedAlbumsTracks(playlist.songs) } // no href to page through for albums
+		// Saved albums have no href to page through, and the tracks listed with them are "simplified", lacking popularity, ISRC,
+		// and album info. So fetch full tracks by id 50 at a time, and dress each response up like a page of playlist items.
+		if (playlist.name == "Saved Albums") for (let i = 0; i < playlist.songs.length; i += 50) {
+			let chunk = playlist.songs.slice(i, i+50)
+			requests.push(utils.apiCall("https://api.spotify.com/v1/tracks?ids=" + chunk.map(s => s.id).join(','), (i/50)*100).then(response =>
+				({ items: response.tracks.map((track, k) => ({ track: track, added_at: chunk[k].added_at })) })))
+		}
 		else for (let offset = 0; offset < playlist.tracks.total; offset += increment) {
 			requests.push(utils.apiCall(playlist.tracks.href + '?offset=' + offset + '&limit=' + increment, (offset/increment)*100)) // I'm spacing requests by 100ms regardless of increment.
 		}
