@@ -320,10 +320,7 @@ let PlaylistExporter = {
 
 // runs when the page loads
 onload = async () => {
-	let code = new URLSearchParams(location.search).get('code') // try to snag a code out of the url, in case this is after authorize()
-	if (code) {
-		history.replaceState({}, '', '/') // get rid of the ugly code string from the browser bar
-
+	if (code) { // snagged from url by inline script at top of index.html
 		let response = await fetch("https://accounts.spotify.com/api/token", { method: 'POST', headers: {'Content-Type': 'application/x-www-form-urlencoded'},
 			body: new URLSearchParams({client_id: "d99b082b01d74d61a100c9a0e056380b", grant_type: 'authorization_code', code: code, redirect_uri: location.origin,
 				code_verifier: localStorage.getItem('code_verifier')}) }) // POST to get the access token, then fish it out of the response body
