@@ -49,6 +49,10 @@ Run the [Jupyter Notebook](https://github.com/pavelkomarov/exportify/blob/master
 - All songs plotted in 2D to indicate relative similarities
 
 
+### Send to another app
+
+Open `https://exportify.net/?sendto=<app>` and, once logged in, a **Send to <app>** button appears above your playlists. It reads your playlists (tracks only, so it's quicker than an export) and opens the app with the names of the artists in your library, ranked by how many of their tracks you have, carried in the link's `#fragment` (which browsers never send to a server). Nothing is downloaded, and the app never sees your Spotify login or token. Only apps in the `SEND_TO` list in `exportify.js` can be a destination; to add one, open a pull request with its name and the address that receives `#from=exportify&names=<newline-separated, URL-encoded names>`.
+
 ### Development
 
 Most of the interesting logic that communicates with the Spotify Web API happens in Javascript in `exportify.js`. I've left many detailed code comments and tried to structure it as rationally as I can, so take a look. The webpage skin and a few action bindings are defined in `index.html`.

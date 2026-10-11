@@ -7,7 +7,8 @@
 	<link rel="icon" type="image/png" href="favicon.png">
 	<link rel="canonical" href="https://exportify.net">
 
-	<script>let code = new URLSearchParams(location.search).get('code'); if (code) history.replaceState({}, '', '/')</script>
+	<script>let code = new URLSearchParams(location.search).get('code'); if (code) history.replaceState({}, '', '/')
+		let sendtoParam = new URLSearchParams(location.search).get('sendto'); if (sendtoParam) { sessionStorage.setItem('sendto', sendtoParam); history.replaceState({}, '', '/') }</script>
 	<!-- Bootstrap -->
 	<link rel="stylesheet" href="//maxcdn.bootstrapcdn.com/bootstrap/3.3.4/css/bootstrap.min.css">
 	<link rel="stylesheet" href="//maxcdn.bootstrapcdn.com/font-awesome/4.3.0/css/font-awesome.min.css">

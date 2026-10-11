@@ -1,3 +1,14 @@
+// Apps a user can send their library's artists to directly, without downloading anything: open
+// exportify.net/?sendto=<key> and a "Send to <app>" button appears above the playlists. The app gets
+// only the names of the artists in the user's liked songs, saved albums and playlists, ranked by how
+// many of their tracks are there, carried in the link's #fragment (which browsers never send to any
+// server): never the access token, never the tracks. Only apps listed here can be a destination, so
+// a link can't send a user's data anywhere else. Add yours in a pull request.
+const SEND_TO = {
+	facevalue: { name: "Face Value", url: "https://findfacevalue.com/import" }, // concert presale and on-sale alerts, findfacevalue.com
+}
+const sendto = sessionStorage.getItem('sendto') // the key, kept for this tab across the Spotify login round trip
+
 // A collection of functions to create and send API queries
 const utils = {
 	// Send a request to the Spotify server to let it know we want a session. This is literally accomplished by navigating
@@ -105,6 +116,7 @@ class PlaylistTable extends React.Component {
 		//add info to this Component's state. Use setState() so render() gets called again.
 		this.setState({ playlists: playlists })
 		subtitle.textContent = this.state.playlists.length + ' playlists\n' // directly reference an HTML element by id
+		if (SEND_TO[sendto]) { subtitle.innerHTML += ' &middot; tap <b>Send to ' + SEND_TO[sendto].name + '</b> to send it the names of your artists. Nothing is downloaded.' }
 	}
 
 	// Make the table sortable
@@ -131,6 +143,11 @@ class PlaylistTable extends React.Component {
 	render() {
 		if (this.state?.playlists.length > 0) {
 			return React.createElement("div", { id: "playlists" },
+				// Opened from another app (?sendto=): one button above the table, where it's seen on a phone too
+				SEND_TO[sendto] && React.createElement("p", { className: "text-center" },
+					React.createElement("button", { className: "btn btn-success btn-lg", type: "submit", id: "sendTo",
+						onClick: () => PlaylistExporter.sendTo(this.state.playlists) },
+						React.createElement("i", { className: "fa fa-paper-plane"}), " Send to " + SEND_TO[sendto].name)),
 				React.createElement("table", { className: "table table-hover" },
 					// table header
 					React.createElement("thead", null, // have to explicitly pass null because the children come as *args _after_ the second argument
@@ -204,17 +221,42 @@ let PlaylistExporter = {
 		saveAs(zip.generate({ type: "blob" }), "spotify_playlists.zip")
 	},
 
+	// Send the names of the artists in all the user's playlists to the app named by ?sendto= (see SEND_TO), without a
+	// download: the names ride in the link's #fragment, which the browser keeps to itself. Only the track data is fetched
+	// here, not genres, labels or audio features, so this is quicker than Export All.
+	async sendTo(playlists) {
+		error.innerHTML = ""
+		let app = SEND_TO[sendto]
+		let tracks = {} // artist name -> set of the track ids they're on, so a song on five playlists counts once
+		for (let [i, playlist] of playlists.entries()) {
+			sendTo.innerHTML = '<i class="fa fa-circle-o-notch fa-spin"></i> Reading ' + (i+1) + '/' + playlists.length
+			try {
+				for (let response of await Promise.all(this.trackRequests(playlist))) {
+					for (let song of response.items) {
+						let id = song.track?.id ?? song.track?.uri
+						song.track?.artists?.forEach(artist => { if (artist?.name && id) { (tracks[artist.name] ??= new Set()).add(id) } })
+					}
+				}
+			} catch (e) { // Surface all errors, but send what was read
+				error.innerHTML += "Couldn't read " + playlist.name + " with id " + playlist.id + ". Encountered <tt>" + e +
+					"</tt><br>" + e.stack + '<br>Please <a href="https://github.com/pavelkomarov/exportify/issues">let us know</a>. ' +
+					"The others are still being read.<br/>"
+			}
+		}
+		let names = Object.keys(tracks).sort((a, b) => tracks[b].size - tracks[a].size || a.localeCompare(b)).slice(0, 200)
+		sendTo.innerHTML = '<i class="fa fa-paper-plane"></i> Send to ' + app.name
+		sessionStorage.removeItem('sendto')
+		location = app.url + "#from=exportify&names=" + encodeURIComponent(names.join("\n")) // the fragment never reaches a server
+	},
+
 	// take the playlist object and return an acceptable filename
 	fileName(playlist) {
 		return playlist.name.replace(/[\/\\:*?"<>|]/g, '').replace(/\s+/g, '_')// /.../g is a Perl-style modifier, g for global, meaning all matches replaced
 	},
 
-	// This is where the magic happens. The access token gives us permission to query this info from Spotify, and the
-	// playlist object gives us all the information we need to start asking for songs.
-	async csvData(playlist) {
+	// The requests (Promises) for a playlist's tracks, `increment` songs at a time, spaced by 100ms regardless of increment.
+	trackRequests(playlist) {
 		let increment = ["liked_songs", "saved_albums"].includes(playlist.id) ? 50 : 100 // Can max call for only 50 tracks at a time vs 100 for playlists
-
-		// Make asynchronous API calls for `increment` songs at a time, and put the results (all Promises) in a list.
 		let requests = []
 		if (playlist.id == "saved_albums") for (let offset = 0; offset < playlist.tracks.total; offset += increment) {
 			let chunk = playlist.songs.slice(offset, offset+increment) // tracks known, but we want more details, and saved albums have no href to page through
@@ -222,8 +264,16 @@ let PlaylistExporter = {
 				response => ({ items: response.tracks.map((track, i) => ({ track: track, added_at: chunk[i].added_at })) })))
 		}
 		else for (let offset = 0; offset < playlist.tracks.total; offset += increment) {
-			requests.push(utils.apiCall(playlist.tracks.href + '?offset=' + offset + '&limit=' + increment, (offset/increment)*100)) // I'm spacing requests by 100ms regardless of increment.
+			requests.push(utils.apiCall(playlist.tracks.href + '?offset=' + offset + '&limit=' + increment, (offset/increment)*100))
 		}
+		return requests
+	},
+
+	// This is where the magic happens. The access token gives us permission to query this info from Spotify, and the
+	// playlist object gives us all the information we need to start asking for songs.
+	async csvData(playlist) {
+		// Make asynchronous API calls for `increment` songs at a time, and put the results (all Promises) in a list.
+		let requests = this.trackRequests(playlist)
 		// "returns a single Promise that resolves when all of the promises passed as an iterable have resolved"
 		// https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Promise/all
 		let artist_ids = new Set()
@@ -320,6 +370,9 @@ let PlaylistExporter = {
 
 // runs when the page loads
 onload = async () => {
+	if (sendto && SEND_TO[sendto]) { // opened from another app: say what the Send button will do
+		subtitle.innerHTML = 'Log in, then tap <b>Send to ' + SEND_TO[sendto].name + '</b> to send it the names of the artists in your library. Nothing is downloaded.'
+	}
 	if (code) { // snagged from url by inline script at top of index.html
 		let response = await fetch("https://accounts.spotify.com/api/token", { method: 'POST', headers: {'Content-Type': 'application/x-www-form-urlencoded'},
 			body: new URLSearchParams({client_id: "d99b082b01d74d61a100c9a0e056380b", grant_type: 'authorization_code', code: code, redirect_uri: location.origin,
